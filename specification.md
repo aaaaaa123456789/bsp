@@ -262,15 +262,15 @@ separate sections.
 * fillbyte
 * fillhalfword
 * fillword
-* getbyte
-* getbytedec
-* getbyteinc
-* gethalfword
-* gethalfworddec
-* gethalfwordinc
-* getword
-* getworddec
-* getwordinc
+* [getbyte][get]
+* [getbytedec][get]
+* [getbyteinc][get]
+* [gethalfword][get]
+* [gethalfworddec][get]
+* [gethalfwordinc][get]
+* [getword][get]
+* [getworddec][get]
+* [getwordinc][get]
 * [ifeq][conditionals]
 * [ifge][conditionals]
 * [ifgt][conditionals]
@@ -307,9 +307,9 @@ separate sections.
 * seekend
 * seekfwd
 * [set][var-basic]
-* stackread
-* stackshift
-* stackwrite
+* [stackread][stack-adv]
+* [stackshift][stack-adv]
+* [stackwrite][stack-adv]
 * [subtract][calc]
 * truncate
 * truncatepos
@@ -331,6 +331,8 @@ separate sections.
 [print]: #printing-messages
 [menu]: #option-menus
 [jumptable]: #jump-tables
+[stack-adv]: #advanced-stack-operations
+[get]: #reading-values-from-patch-space
 
 ## Instruction description
 
@@ -533,3 +535,47 @@ For instance, the following code will jump to `.zero`, `.one` or `.two` dependin
 .two
 	; ...
 ```
+
+### Advanced stack operations
+
+```
+stackread #variable, position
+stackwrite position, any
+stackshift amount
+```
+
+These instructions operate directly on the values in stack.
+
+The `stackread` instruction reads a value from the stack into a variable, and the `stackwrite` instruction writes a
+value to a position in stack. For both instructions, positions in stack are numbered from the current stack position
+upwards: the value that would be popped next is position 0, the following one in stack is position 1, and so on.
+Attempting to access a position in stack that doesn't exist (that is, a position that is greater or equal than the
+number of elements in the stack) is a fatal error.
+
+The `stackshift` instruction performs a mass push/pop, changing the stack size. The argument to this instruction is
+treated as a _signed_ value: if it is positive, as many zeros as the argument indicates are pushed into the stack,
+making it larger; if it is negative, as many elements as the absolute value of the argument indicates are popped and
+stored nowhere, making the stack smaller (it is a fatal error to attempt to pop more values than the stack currently
+holds). An argument of zero makes the instruction do nothing.
+
+## Reading values from patch space
+
+```
+getbyte #variable, address
+getbyteinc #variable, #address
+getbytedec #variable, #address
+
+gethalfword #variable, address
+gethalfwordinc #variable, #address
+gethalfworddec #variable, #address
+
+getword #variable, address
+getwordinc #variable, #address
+getworddec #variable, #address
+```
+
+These instructions are used to fetch values from the BSP itself. They read a value from patch space and store it in a
+variable. The address indicates where the value is located; halfwords and words are read in little-endian form.
+
+The `inc` and `dec` respectively increment and decrement the address variable by the size of the value (1, 2 or 4)
+_after_ reading from that address. For these instructions, the address must be a variable; it cannot be an immediate.
