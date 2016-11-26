@@ -249,15 +249,15 @@ of them must be considered a fatal error.
 The different instructions are listed here in alphabetical order, for lookup convenience. They are described in
 separate sections.
 
-* add
-* and
+* [add][calc]
+* [and][calc]
 * bsppatch
-* call
-* callnz
-* callz
+* [call][flow]
+* [callnz][flow]
+* [callz][flow]
 * checksha1
-* decrement
-* divide
+* [decrement][incdec]
+* [divide][calc]
 * exit
 * fillbyte
 * fillhalfword
@@ -277,31 +277,31 @@ separate sections.
 * ifle
 * iflt
 * ifne
-* increment
+* [increment][incdec]
 * ipspatch
-* jump
-* jumpnz
+* [jump][flow]
+* [jumpnz][flow]
 * jumptable
-* jumpz
+* [jumpz][flow]
 * length
 * lockpos
 * menu
-* multiply
+* [multiply][calc]
 * [nop]
-* or
-* pop
+* [or][calc]
+* [pop][stack-basic]
 * poppos
 * pos
 * print
-* push
+* [push][stack-basic]
 * pushpos
 * readbyte
 * readhalfword
 * readword
-* remainder
-* retnz
-* return
-* retz
+* [remainder][calc]
+* [retnz][flow]
+* [return][flow]
+* [retz][flow]
 * seek
 * seekback
 * seekend
@@ -310,7 +310,7 @@ separate sections.
 * stackread
 * stackshift
 * stackwrite
-* subtract
+* [subtract][calc]
 * truncate
 * truncatepos
 * unlockpos
@@ -318,12 +318,22 @@ separate sections.
 * writedata
 * writehalfword
 * writeword
-* xor
+* [xor][calc]
 * xordata
 
 [nop]: #no-operation
+[calc]: #arithmetical-and-logical-instructions
+[incdec]: #increments-and-decrements
+[stack-basic]: #basic-stack-operations
+[flow]: #control-flow
 
 ## Instruction description
+
+Instructions are detailed here, including their operands and semantics.
+
+For simplicity, the script compiler's syntax is used to show the form of the instruction. Operands that must be
+variables are prefixed with `#`; other operands can be either variables or immediates. (In no case an instruction
+only accepts an immediate as an operand.)
 
 ### No operation
 
@@ -332,3 +342,76 @@ nop
 ```
 
 This instruction does nothing at all. It can be used, for instance, as a filler.
+
+### Arithmetical and logical instructions
+
+```
+add #variable, any, any
+subtract #variable, any, any
+multiply #variable, any, any
+divide #variable, any, any
+remainder #variable, any, any
+and #variable, any, any
+or #variable, any, any
+xor #variable, any, any
+```
+
+These instructions perform the specified calculation between the two last operands and store the result in the variable
+indicated by the first. The operands to the calculation are treated as unsigned values in all cases.
+
+If the last operand to `divide` or `remainder` is zero, a fatal error occurs.
+
+Note that the script compiler accepts a two-operand shorthand for these instructions, that is simply expanded to the
+full three-operand form by repeating the first operand. (That is, `add #var, 3` is converted to `add #var, #var, 3`
+prior to compilation.) This shorthand is a feature of the compiler, not part of the specification for the instructions;
+the instructions (in the binary file) can only exist in three-operand form.
+
+### Increments and decrements
+
+```
+increment #variable
+decrement #variable
+```
+
+These instructions respectively add and subtract one from the specified variable. While they are equivalent to using
+`add #variable, #variable, 1` or `subtract #variable, #variable, 1`, they are available as shorthands.
+
+### Basic stack operations
+
+```
+push any
+pop #variable
+```
+
+These instructions perform basic stack manipulations. The `push` instruction pushes a value into the stack (which can
+be either a variable or a word immediate), and the `pop` instruction pops a value from the stack and stores it in the
+specified variable.
+
+If the `pop` instruction is executed with an empty stack, a fatal error occurs.
+
+## Control flow
+
+```
+jump address
+jumpz #variable, address
+jumpnz #variable, address
+
+call address
+callz #variable, address
+callnz #variable, address
+
+return
+retz #variable
+retnz #variable
+```
+
+The `jump` instruction updates the instruction pointer, setting it to the value in its operand, which causes control to
+jump to the instruction pointed by it. (Note that the address operands in these instructions can be immediate addresses
+or variables.)
+
+The `call` instruction does the same, but it first pushes the current value of the instruction pointer (which points to
+the next instruction) to the stack. The `return` instruction pops a value from the stack and sets the instruction
+pointer to it, thus returning from a prior call; executing `return` with an empty stack is equivalent to `exit 0`.
+
+The `z` versions of the instructions above execute conditionally based on the value of a variable: they execute if the
+variable is zero, or do nothing otherwise. The `nz` versions invert this condition.
