@@ -577,5 +577,6 @@ getworddec #variable, #address
 These instructions are used to fetch values from the BSP itself. They read a value from patch space and store it in a
 variable. The address indicates where the value is located; halfwords and words are read in little-endian form.
 
-The `inc` and `dec` respectively increment and decrement the address variable by the size of the value (1, 2 or 4)
-_after_ reading from that address. For these instructions, the address must be a variable; it cannot be an immediate.
+The `inc` and `dec` variants respectively increment and decrement the address variable by the size of the value (1, 2
+or 4) _after_ reading from that address. For these instructions, the address must be a variable; it cannot be an
+immediate address. (Note that a reference to a label is compiled as an immediate.)
