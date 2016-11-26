@@ -189,8 +189,8 @@ of them must be considered a fatal error.
 |`0x67`     |seekend               |   2|variable                                |
 |`0x68`     |print                 |   5|word                                    |
 |`0x69`     |print                 |   2|variable                                |
-|`0x6a`     |menu                  |   5|word                                    |
-|`0x6b`     |menu                  |   2|variable                                |
+|`0x6a`     |menu                  |   6|variable, word                          |
+|`0x6b`     |menu                  |   3|variable, variable                      |
 |`0x6c`     |xordata               |   9|word, word                              |
 |`0x6d`     |xordata               |   6|word, variable                          |
 |`0x6e`     |xordata               |   6|variable, word                          |
@@ -214,7 +214,7 @@ of them must be considered a fatal error.
 |`0x80`     |lockpos               |   1|none                                    |
 |`0x81`     |unlockpos             |   1|none                                    |
 |`0x82`     |truncatepos           |   1|none                                    |
-|`0x83`     |jumptable             |   1|none                                    |
+|`0x83`     |jumptable             |   2|variable                                |
 |`0x84`     |set                   |   6|variable, word                          |
 |`0x85`     |set                   |   3|variable, variable                      |
 |`0x86`     |ipspatch              |   5|word                                    |
@@ -256,9 +256,9 @@ separate sections.
 * [callnz][flow]
 * [callz][flow]
 * checksha1
-* [decrement][incdec]
+* [decrement][var-basic]
 * [divide][calc]
-* exit
+* [exit]
 * fillbyte
 * fillhalfword
 * fillword
@@ -271,28 +271,28 @@ separate sections.
 * getword
 * getworddec
 * getwordinc
-* ifeq
-* ifge
-* ifgt
-* ifle
-* iflt
-* ifne
-* [increment][incdec]
+* [ifeq][conditionals]
+* [ifge][conditionals]
+* [ifgt][conditionals]
+* [ifle][conditionals]
+* [iflt][conditionals]
+* [ifne][conditionals]
+* [increment][var-basic]
 * ipspatch
 * [jump][flow]
 * [jumpnz][flow]
-* jumptable
+* [jumptable]
 * [jumpz][flow]
 * length
 * lockpos
-* menu
+* [menu]
 * [multiply][calc]
 * [nop]
 * [or][calc]
 * [pop][stack-basic]
 * poppos
 * pos
-* print
+* [print]
 * [push][stack-basic]
 * pushpos
 * readbyte
@@ -306,7 +306,7 @@ separate sections.
 * seekback
 * seekend
 * seekfwd
-* set
+* [set][var-basic]
 * stackread
 * stackshift
 * stackwrite
@@ -322,10 +322,15 @@ separate sections.
 * xordata
 
 [nop]: #no-operation
+[var-basic]: #basic-variable-operations
 [calc]: #arithmetical-and-logical-instructions
-[incdec]: #increments-and-decrements
 [stack-basic]: #basic-stack-operations
 [flow]: #control-flow
+[conditionals]: #conditionals
+[exit]: #exiting
+[print]: #printing-messages
+[menu]: #option-menus
+[jumptable]: #jump-tables
 
 ## Instruction description
 
@@ -342,6 +347,21 @@ nop
 ```
 
 This instruction does nothing at all. It can be used, for instance, as a filler.
+
+### Basic variable operations
+
+```
+set #variable, any
+increment #variable
+decrement #variable
+```
+
+The `set` instruction sets the variable's value to the specified value, which can be an immediate value or another
+variable.
+
+The `increment` and `decrement` respectively add and subtract one from the specified variable. While they are
+equivalent to using `add #variable, #variable, 1` or `subtract #variable, #variable, 1`, they are available as shorter
+forms (that also use fewer bytes in the BSP file).
 
 ### Arithmetical and logical instructions
 
@@ -366,16 +386,6 @@ full three-operand form by repeating the first operand. (That is, `add #var, 3` 
 prior to compilation.) This shorthand is a feature of the compiler, not part of the specification for the instructions;
 the instructions (in the binary file) can only exist in three-operand form.
 
-### Increments and decrements
-
-```
-increment #variable
-decrement #variable
-```
-
-These instructions respectively add and subtract one from the specified variable. While they are equivalent to using
-`add #variable, #variable, 1` or `subtract #variable, #variable, 1`, they are available as shorthands.
-
 ### Basic stack operations
 
 ```
@@ -389,7 +399,7 @@ specified variable.
 
 If the `pop` instruction is executed with an empty stack, a fatal error occurs.
 
-## Control flow
+### Control flow
 
 ```
 jump address
@@ -415,3 +425,111 @@ pointer to it, thus returning from a prior call; executing `return` with an empt
 
 The `z` versions of the instructions above execute conditionally based on the value of a variable: they execute if the
 variable is zero, or do nothing otherwise. The `nz` versions invert this condition.
+
+### Conditionals
+
+```
+ifeq #variable, any, address
+ifne #variable, any, address
+iflt #variable, any, address
+ifle #variable, any, address
+ifgt #variable, any, address
+ifge #variable, any, address
+```
+
+These instructions conditionally jump to the specified address, based on the condition specified by the instruction
+itself. Respectively, the conditions are that the value is equal, not equal, less than, less than or equal, greater
+than, and greater than or equal than the second argument to the instruction.
+
+### Exiting
+
+```
+exit any
+```
+
+This instruction terminates the execution of the script. The operand to this instruction is the exit status of the BSP:
+zero indicates success, and any other value indicates failure (the engine may use this value in any way it wishes as
+long as it follows this convention). The engine must write out the contents of the file buffer to the output (the patch
+target) upon exit with a status of zero.
+
+If the current BSP is being executed as a result of a parent script executing a `bsppatch` instruction, the argument to
+exit becomes the exit status that the parent `bsppatch` instruction will store. In this case, execution resumes with
+the parent script; the engine must not terminate execution (regardless of exit status) and must not write to the output
+(again, regardless of exit status) upon exit of a script invoked by `bsppatch`.
+
+### Printing messages
+
+```
+print address
+```
+
+This instruction prints a message to the user. The address parameter indicates where in the patch space the message
+begins; the message must be UTF-8 encoded, and continues until a null byte (a byte with value `0x00`) is found.
+
+This document does not specify how the engine will display the message; however, in case of a console-based application
+(or an environment that behaves in a similar fashion), it is recommended that the engine prints a newline character
+after the message.
+
+### Option menus
+
+```
+menu #variable, address
+```
+
+This instruction displays a menu with options, from which the user has to select one. The selected option number is
+written to the indicated variable; the first option is numbered zero.
+
+The address parameter should point to a list of pointers in patch space, each pointer pointing in turn to the text that
+each option will contain (in the same format that the `print` instruction uses); the list is terminated with a
+`0xffffffff` value. For instance, this code would display a menu with four options:
+
+```
+	menu #result, Options
+	; ...
+
+Options:
+	dw .zero
+	dw .one
+	dw .two
+	dw .three
+	dw -1
+.zero
+	string "Option 0"
+.one
+	string "Option 1"
+.two
+	string "Option 2"
+.three
+	string "Option 3"
+```
+
+If the list of pointers is empty (i.e., if the first pointer is `0xffffffff`), no menu is shown to the user, and the
+variable is set to `0xffffffff`.
+
+### Jump tables
+
+```
+jumptable #variable
+```
+
+This instruction expects to be followed by a list of pointers, as many as needed according to the values the variable
+may have. The instruction will read the word at `instruction pointer + 4 * #variable` and jump to the address that is
+read. Note that no bounds checking is performed on the value of the variable, so the script must ensure that the
+instruction will jump to a correct location.
+
+For instance, the following code will jump to `.zero`, `.one` or `.two` depending on whether the value of `#var` is 0,
+1 or 2 respectively (if `#var` is 3 or greater, the result is undefined):
+
+```
+	jumptable #var
+	dw .zero
+	dw .one
+	dw .two
+
+.zero
+	; ...
+.one
+	; ...
+.two
+	; ...
+```
