@@ -259,9 +259,9 @@ separate sections.
 * [decrement][var-basic]
 * [divide][calc]
 * [exit]
-* fillbyte
-* fillhalfword
-* fillword
+* [fillbyte][fill]
+* [fillhalfword][fill]
+* [fillword][fill]
 * [getbyte][get]
 * [getbytedec][get]
 * [getbyteinc][get]
@@ -295,9 +295,9 @@ separate sections.
 * [print]
 * [push][stack-basic]
 * pushpos
-* readbyte
-* readhalfword
-* readword
+* [readbyte][read]
+* [readhalfword][read]
+* [readword][read]
 * [remainder][calc]
 * [retnz][flow]
 * [return][flow]
@@ -314,10 +314,10 @@ separate sections.
 * truncate
 * truncatepos
 * unlockpos
-* writebyte
+* [writebyte][write]
 * writedata
-* writehalfword
-* writeword
+* [writehalfword][write]
+* [writeword][write]
 * [xor][calc]
 * xordata
 
@@ -333,6 +333,9 @@ separate sections.
 [jumptable]: #jump-tables
 [stack-adv]: #advanced-stack-operations
 [get]: #reading-values-from-patch-space
+[read]: #reading-values-from-the-file-buffer
+[write]: #writing-values-to-the-file-buffer
+[fill]: #filling-the-file-buffer-with-a-value
 
 ## Instruction description
 
@@ -580,3 +583,52 @@ variable. The address indicates where the value is located; halfwords and words 
 The `inc` and `dec` variants respectively increment and decrement the address variable by the size of the value (1, 2
 or 4) _after_ reading from that address. For these instructions, the address must be a variable; it cannot be an
 immediate address. (Note that a reference to a label is compiled as an immediate.)
+
+### Reading values from the file buffer
+
+```
+readbyte #variable
+readhalfword #variable
+readword #variable
+```
+
+These instructions read a value from the file buffer, located at the position given by the current file pointer. The
+current file pointer itself is incremented by the size of the value read (1, 2 or 4) after reading the value, unless it
+is in locked state. Halfwords and words are read in little-endian form.
+
+It is a fatal error to attempt to read beyond the end of the file buffer.
+
+### Writing values to the file buffer
+
+```
+writebyte any
+writehalfword any
+writeword any
+```
+
+These instructions write a value to the file buffer, at the position indicated by the current file pointer. The current
+file pointer itself is incremented by the size of the value written (1, 2 or 4) after writing the value, unless it is
+in locked state. Halfwords and words are written in little-endian form.
+
+If the instruction attempts to write past the end of the file buffer, the file buffer is extended to accomodate the new
+value. If this results in a gap of uninitialized data, this gap is filled with zeros.
+
+Note that the `writebyte` and `writehalfword` instructions take respectively a byte and a halfword argument; the upper
+bytes of the value are silently ignored.
+
+### Filling the file buffer with a value
+
+```
+fillbyte count, any
+fillhalfword count, any
+fillword count, any
+```
+
+These instructions repeatedly write the value indicated by their second argument as many times as the first argument
+indicates. All considerations about the current file pointer apply as in the `write` instructions; namely, this causes
+the current file pointer to be incremented accordingly.
+
+Attempting to write past the end of the file buffer behaves as with the `write` instructions.
+
+Note that the `fillbyte` and `fillhalfword` respectively take a byte and a halfword as their second argument; the upper
+bytes of the value passed there are silently ignored.
