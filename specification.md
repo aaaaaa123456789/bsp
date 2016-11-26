@@ -558,7 +558,7 @@ making it larger; if it is negative, as many elements as the absolute value of t
 stored nowhere, making the stack smaller (it is a fatal error to attempt to pop more values than the stack currently
 holds). An argument of zero makes the instruction do nothing.
 
-## Reading values from patch space
+### Reading values from patch space
 
 ```
 getbyte #variable, address
