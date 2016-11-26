@@ -90,6 +90,7 @@ void two_arguments_command(int, char **);
 void one_variable_command(int, char **);
 void one_variable_one_argument_command(int, char **);
 void one_variable_two_arguments_command(int, char **);
+void two_variables_command(int, char **);
 void one_byte_argument_command(int, char **);
 void one_halfword_argument_command(int, char **);
 void calculation_command(int, char **);
@@ -121,6 +122,7 @@ struct command script_commands[] = {
   {"callz",          0x5c, &one_variable_one_argument_command},
   {"checksha1",      0x16, &one_variable_one_argument_command},
   {"db",             1,    &data_command},
+  {"decrement",      0x9f, &one_variable_command},
   {"define",         0,    &define_command},
   {"dh",             2,    &data_command},
   {"divide",         0x2c, &calculation_command},
@@ -130,8 +132,14 @@ struct command script_commands[] = {
   {"fillhalfword",   0x74, &one_argument_one_halfword_argument},
   {"fillword",       0x78, &two_arguments_command},
   {"getbyte",        0x10, &one_variable_one_argument_command},
+  {"getbytedec",     0x9c, &two_variables_command},
+  {"getbyteinc",     0x98, &two_variables_command},
   {"gethalfword",    0x12, &one_variable_one_argument_command},
+  {"gethalfworddec", 0x9d, &two_variables_command},
+  {"gethalfwordinc", 0x99, &two_variables_command},
   {"getword",        0x14, &one_variable_one_argument_command},
+  {"getworddec",     0x9e, &two_variables_command},
+  {"getwordinc",     0x9a, &two_variables_command},
   {"hexdata",        0,    &hexdata_command},
   {"ifeq",           0x50, &one_variable_two_arguments_command},
   {"ifge",           0x4c, &one_variable_two_arguments_command},
@@ -141,6 +149,7 @@ struct command script_commands[] = {
   {"ifne",           0x54, &one_variable_two_arguments_command},
   {"incbin",         1,    &include_command},
   {"include",        0,    &include_command},
+  {"increment",      0x9b, &one_variable_command},
   {"ipspatch",       0x86, &one_argument_command},
   {"jump",           0x02, &one_argument_command},
   {"jumpnz",         0x5a, &one_variable_one_argument_command},
@@ -636,6 +645,10 @@ void one_variable_one_argument_command (int opcode_byte, char ** arguments) {
 
 void one_variable_two_arguments_command (int opcode_byte, char ** arguments) {
   standard_command(opcode_byte, 1, 2, arguments);
+}
+
+void two_variables_command (int opcode_byte, char ** arguments) {
+  standard_command(opcode_byte, 2, 0, arguments);
 }
 
 void one_byte_argument_command (int opcode_byte, char ** arguments) {
