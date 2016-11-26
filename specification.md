@@ -246,4 +246,89 @@ of them must be considered a fatal error.
 
 ## Instruction set
 
-TODO
+The different instructions are listed here in alphabetical order, for lookup convenience. They are described in
+separate sections.
+
+* add
+* and
+* bsppatch
+* call
+* callnz
+* callz
+* checksha1
+* decrement
+* divide
+* exit
+* fillbyte
+* fillhalfword
+* fillword
+* getbyte
+* getbytedec
+* getbyteinc
+* gethalfword
+* gethalfworddec
+* gethalfwordinc
+* getword
+* getworddec
+* getwordinc
+* ifeq
+* ifge
+* ifgt
+* ifle
+* iflt
+* ifne
+* increment
+* ipspatch
+* jump
+* jumpnz
+* jumptable
+* jumpz
+* length
+* lockpos
+* menu
+* multiply
+* [nop]
+* or
+* pop
+* poppos
+* pos
+* print
+* push
+* pushpos
+* readbyte
+* readhalfword
+* readword
+* remainder
+* retnz
+* return
+* retz
+* seek
+* seekback
+* seekend
+* seekfwd
+* set
+* stackread
+* stackshift
+* stackwrite
+* subtract
+* truncate
+* truncatepos
+* unlockpos
+* writebyte
+* writedata
+* writehalfword
+* writeword
+* xor
+* xordata
+
+[nop]: #no-operation
+
+## Instruction description
+
+### No operation
+
+```
+nop
+```
+
+This instruction does nothing at all. It can be used, for instance, as a filler.
