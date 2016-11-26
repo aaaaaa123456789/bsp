@@ -153,7 +153,7 @@ struct command script_commands[] = {
   {"ipspatch",       0x86, &one_argument_command},
   {"jump",           0x02, &one_argument_command},
   {"jumpnz",         0x5a, &one_variable_one_argument_command},
-  {"jumptable",      0x83, &no_arguments_command},
+  {"jumptable",      0x83, &one_variable_command},
   {"jumpz",          0x58, &one_variable_one_argument_command},
   {"length",         0x0b, &one_variable_command},
   {"lockpos",        0x80, &no_arguments_command},
