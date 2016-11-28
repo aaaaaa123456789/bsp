@@ -283,18 +283,18 @@ separate sections.
 * [jumpnz][flow]
 * [jumptable]
 * [jumpz][flow]
-* length
-* lockpos
+* [length]
+* [lockpos][pos]
 * [menu]
 * [multiply][calc]
 * [nop]
 * [or][calc]
 * [pop][stack-basic]
-* poppos
-* pos
+* [poppos][pos]
+* [pos]
 * [print]
 * [push][stack-basic]
-* pushpos
+* [pushpos][pos]
 * [readbyte][read]
 * [readhalfword][read]
 * [readword][read]
@@ -302,24 +302,24 @@ separate sections.
 * [retnz][flow]
 * [return][flow]
 * [retz][flow]
-* seek
-* seekback
-* seekend
-* seekfwd
+* [seek]
+* [seekback][seek]
+* [seekend][seek]
+* [seekfwd][seek]
 * [set][var-basic]
 * [stackread][stack-adv]
 * [stackshift][stack-adv]
 * [stackwrite][stack-adv]
 * [subtract][calc]
-* truncate
-* truncatepos
-* unlockpos
+* [truncate]
+* [truncatepos][truncate]
+* [unlockpos][pos]
 * [writebyte][write]
-* writedata
+* [writedata]
 * [writehalfword][write]
 * [writeword][write]
 * [xor][calc]
-* xordata
+* [xordata][writedata]
 
 [nop]: #no-operation
 [var-basic]: #basic-variable-operations
@@ -336,6 +336,11 @@ separate sections.
 [read]: #reading-values-from-the-file-buffer
 [write]: #writing-values-to-the-file-buffer
 [fill]: #filling-the-file-buffer-with-a-value
+[writedata]: #operating-with-data-from-the-bsp-on-the-file-buffer
+[length]: #retrieving-the-length-of-the-file-buffer
+[truncate]: #resizing-the-file-buffer
+[pos]: #operating-with-the-current-file-pointer
+[seek]: #modifying-the-current-file-pointer
 
 ## Instruction description
 
@@ -475,6 +480,13 @@ This document does not specify how the engine will display the message; however,
 (or an environment that behaves in a similar fashion), it is recommended that the engine prints a newline character
 after the message.
 
+If the message is not valid UTF-8, the engine may choose to display the message anyway (handling the invalid characters
+in any way it can) or to treat it as a fatal error.
+
+An engine incapable of handling the full Unicode character set may choose to use a reduced character set and replace
+the remaining characters with a suitable substitution character; however, an engine must at least support the Latin
+letters (A-Z, a-z), digits (0-9), spaces, and the following punctuation characters: `'-,.;:#%&!?/()[]`.
+
 ### Option menus
 
 ```
@@ -510,6 +522,9 @@ Options:
 
 If the list of pointers is empty (i.e., if the first pointer is `0xffffffff`), no menu is shown to the user, and the
 variable is set to `0xffffffff`.
+
+Note that a menu with just one option must still be shown to the user, as it is possible to use such a menu to give the
+user the possibility of aborting the process.
 
 ### Jump tables
 
@@ -632,3 +647,83 @@ Attempting to write past the end of the file buffer behaves as with the `write` 
 
 Note that the `fillbyte` and `fillhalfword` respectively take a byte and a halfword as their second argument; the upper
 bytes of the value passed there are silently ignored.
+
+### Operating with data from the BSP on the file buffer
+
+```
+writedata address, length
+xordata address, length
+```
+
+The `writedata` instruction writes data (from the patch space, starting at the location indicated by the address
+argument) into the file buffer, starting at the current file pointer and going for as many bytes as the length argument
+indicates. All considerations about the current file pointer apply as in the other `write` instructions; namely, this
+causes the current file pointer to be incremented accordingly.
+
+The `xordata` instruction applies a XOR operation between the data currently in the file buffer and the data pointed to
+by the address in the patch space.
+
+Attempting to write past the end of the file buffer behaves as with the `write` instructions. Note that `xordata`
+behaves identically to `writedata` in this case.
+
+Also note that, since these instructions read from the patch space, they may attempt to read beyond its end; this is a
+fatal error.
+
+### Retrieving the length of the file buffer
+
+```
+length #variable
+```
+
+This instruction stores the current length of the file buffer in the specified variable.
+
+### Resizing the file buffer
+
+```
+truncate any
+truncatepos
+```
+
+The `truncate` instruction changes the length of the file buffer to the specified value. If the file buffer is made
+shorter this way, the data at the end of it is lost; if it is made longer, the gap at the end is filled with zeros.
+Note that this instruction does not update the current file pointer, even if it would point beyond the end of the file
+buffer after execution
+
+The `truncatepos` instruction changes the length of the file buffer to make it end at the current file pointer; that
+is, it sets the length of the file buffer to the value of the current file pointer, causing the current file pointer to
+point to the end of the file buffer.
+
+### Operating with the current file pointer
+
+```
+pos #variable
+lockpos
+unlockpos
+pushpos
+poppos
+```
+
+The `pos` instruction stores the value of the current file pointer in the specified variable.
+
+The `lockpos` and `unlockpos` instructions set the current file pointer's state accordingly.
+
+The `pushpos` pushes the value of the current file pointer into the stack, and the `poppos` pops a value from the stack
+and sets the current file pointer to it. Note that it is a fatal error to execute `poppos` with an empty stack.
+
+### Modifying the current file pointer
+
+```
+seek any
+seekfwd any
+seekback any
+seekend any
+```
+
+The `seek` instruction sets the current file pointer to the specified value. The `seekfwd` and `seekback` instructions
+respectively add and subtract the specified value from the current file pointer. The `seekend` instruction subtracts
+the specified value from the file buffer length and sets the current file pointer to the result.
+
+It is a fatal error to cause the calculations performed by the last three instructions to overflow.
+
+Note that no bounds checking is performed on the current file pointer: it is allowed to point to a position beyond the
+end of the file buffer by any amount.
