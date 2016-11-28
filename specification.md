@@ -707,8 +707,9 @@ The `pos` instruction stores the value of the current file pointer in the specif
 
 The `lockpos` and `unlockpos` instructions set the current file pointer's state accordingly.
 
-The `pushpos` pushes the value of the current file pointer into the stack, and the `poppos` pops a value from the stack
-and sets the current file pointer to it. Note that it is a fatal error to execute `poppos` with an empty stack.
+The `pushpos` instruction pushes the value of the current file pointer into the stack, and the `poppos` instruction
+pops a value from the stack and sets the current file pointer to it. Note that it is a fatal error to execute `poppos`
+with an empty stack.
 
 ### Modifying the current file pointer
 
