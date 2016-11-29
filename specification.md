@@ -217,8 +217,8 @@ of them must be considered a fatal error.
 |`0x83`     |jumptable             |   2|variable                                |
 |`0x84`     |set                   |   6|variable, word                          |
 |`0x85`     |set                   |   3|variable, variable                      |
-|`0x86`     |ipspatch              |   5|word                                    |
-|`0x87`     |ipspatch              |   2|variable                                |
+|`0x86`     |ipspatch              |   6|variable, word                          |
+|`0x87`     |ipspatch              |   3|variable, variable                      |
 |`0x88`     |stackwrite            |   9|word, word                              |
 |`0x89`     |stackwrite            |   6|word, variable                          |
 |`0x8a`     |stackwrite            |   6|variable, word                          |
@@ -255,7 +255,7 @@ separate sections.
 * [call][flow]
 * [callnz][flow]
 * [callz][flow]
-* checksha1
+* [checksha1]
 * [decrement][var-basic]
 * [divide][calc]
 * [exit]
@@ -278,7 +278,7 @@ separate sections.
 * [iflt][conditionals]
 * [ifne][conditionals]
 * [increment][var-basic]
-* ipspatch
+* [ipspatch]
 * [jump][flow]
 * [jumpnz][flow]
 * [jumptable]
@@ -341,6 +341,8 @@ separate sections.
 [truncate]: #resizing-the-file-buffer
 [pos]: #operating-with-the-current-file-pointer
 [seek]: #modifying-the-current-file-pointer
+[checksha1]: #checking-a-sha-1-hash
+[ipspatch]: #applying-an-ips-patch
 
 ## Instruction description
 
@@ -728,3 +730,71 @@ It is a fatal error to cause the calculations performed by the last three instru
 
 Note that no bounds checking is performed on the current file pointer: it is allowed to point to a position beyond the
 end of the file buffer by any amount.
+
+### Checking a SHA-1 hash
+
+```
+checksha1 #variable, address
+```
+
+This instruction calculates the SHA-1 hash of the current contents of the file buffer (the current file pointer is not
+read or updated by this instruction), and compares to the hash stored in the patch space at the specified address. The
+hash is stored as a 20-byte value, most significant byte first for convenience. The hash is to be calculated as
+specified by the formal specification in [RFC 3174][rfc3174].
+
+The comparison returns a bit mask indicated setting a bit for each byte that fails the comparison: bit 0 is set if the
+first byte of the real hash differs from the first byte of the compared hash, and so on. For instance, knowing that the
+SHA-1 hash for an empty input is `da39a3ee5e6b4b0d3255bfef95601890afd80709`, the following script:
+
+```
+  checksha1 #result, .hash
+  ; ...
+.hash
+  hexdata ff39a3ee5eff4b0d3255bfef95601890afd80709
+```
+
+when executed with an empty file buffer would set `#result` to `0x00000021`. (Notice that the first and sixth bytes of
+the hash have been replaced with `0xff` bytes in the hash provided to `.hash`.)
+
+Also notice that the instruction will set the variable to zero if (and only if) the hash matches in full.
+
+If this instruction is executed multiple times (with any arguments), the engine is not required to recalculate the hash
+as long as the contents of the file buffer haven't changed since the last time the hash was calculated; since it is
+known that the hash will come out to the same value, the engine may simply reuse this value for efficiency.
+
+[rfc3174]: https://tools.ietf.org/html/rfc3174
+
+### Applying an IPS patch
+
+```
+ipspatch #variable, address
+```
+
+This instruction applies an IPS patch, embedded in the BSP itself (that is, read from patch space), to the current file
+buffer. The current file pointer is taken as an offset to be added to all addresses in the IPS patch itself (if this is
+undesirable, execute a `seek 0` instruction beforehand), but it is not updated by this instruction.
+
+The IPS patch is located in patch space, at the address specified by the corresponding argument to the instruction.
+After applying the patch, the variable passed to this instruction is set to point to the address where the IPS patch
+ends (that is, to the end of the patch, right after the `EOF` marker).
+
+Note that, as with any other instruction that writes to the file buffer, writing past its end will extend it
+accordingly and zero-fill any gaps that arise; also, as with any other instruction that reads from patch space, reading
+past its end is a fatal error.
+
+The IPS patching procedure (as implemented by this specification, in compliance with the IPS specification itself) is
+defined as follows:
+
+1. The first five bytes of the patch must be the hexadecimal string `50 41 54 43 48` (representing the ASCII string
+   `PATCH`). If these bytes don't match, a fatal error occurs.
+2. Read three bytes and interpret them as a 24-bit big-endian unsigned value. If this value is equal to `0x454f46`
+   (which happens to be the ASCII string `EOF`), the patch is done (and the variable passed to the `ipspatch`
+   instruction must be set to the address that would be read next); otherwise, continue with the next step.
+3. Add this value to the current file pointer to determine where to begin writing. (Note that this is specific to this
+   specification, and not part of the IPS format itself.)
+4. Read two bytes and interpret them as a 16-bit big-endian unsigned value; this is the amount of data to write.
+5. If the value read in the previous step is not zero, read as many bytes as that value indicates and write those bytes
+   (in the same order) to the file buffer at the position calculated in step 3; then go back to step 2.
+6. Otherwise (that is, if the value read in step 4 was zero), read another 16-bit unsigned value (representing the
+   count) followed by a single byte; repeatedly write this byte as many times as the count specifies starting at the
+   position calculated in step 3, and then go back to step 2.
