@@ -785,8 +785,8 @@ past its end is a fatal error.
 The IPS patching procedure (as implemented by this specification, in compliance with the IPS specification itself) is
 defined as follows:
 
-1. The first five bytes of the patch must be the hexadecimal string `50 41 54 43 48` (representing the ASCII string
-   `PATCH`). If these bytes don't match, a fatal error occurs.
+1. Read the first five bytes of the patch; they must be equal to the hexadecimal string `50 41 54 43 48` (representing
+   the ASCII string `PATCH`). If these bytes don't match, a fatal error occurs.
 2. Read three bytes and interpret them as a 24-bit big-endian unsigned value. If this value is equal to `0x454f46`
    (which happens to be the ASCII string `EOF`), the patch is done (and the variable passed to the `ipspatch`
    instruction must be set to the address that would be read next); otherwise, continue with the next step.
