@@ -771,7 +771,7 @@ ipspatch #variable, address
 ```
 
 This instruction applies an IPS patch, embedded in the BSP itself (that is, read from patch space), to the current file
-buffer. The current file pointer is taken as an offset to be added to all addresses in the IPS patch itself (if this is
+buffer. The current file pointer is taken as an offset to be added to all positions in the IPS patch itself (if this is
 undesirable, execute a `seek 0` instruction beforehand), but it is not updated by this instruction.
 
 The IPS patch is located in patch space, at the address specified by the corresponding argument to the instruction.
