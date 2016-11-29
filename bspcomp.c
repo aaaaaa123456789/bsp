@@ -150,7 +150,7 @@ struct command script_commands[] = {
   {"incbin",         1,    &include_command},
   {"include",        0,    &include_command},
   {"increment",      0x9b, &one_variable_command},
-  {"ipspatch",       0x86, &one_argument_command},
+  {"ipspatch",       0x86, &one_variable_one_argument_command},
   {"jump",           0x02, &one_argument_command},
   {"jumpnz",         0x5a, &one_variable_one_argument_command},
   {"jumptable",      0x83, &one_variable_command},
