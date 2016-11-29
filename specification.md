@@ -827,5 +827,5 @@ being shared resources between the parent and the child, must also conserve thei
 child to the parent.
 
 If the child's execution triggers a fatal error, this fatal error must be propagated to the parent; in other words,
-a fatal error at any depth must halt the whole engine. Execution of the parent must *not* be resumed after a fatal
+a fatal error at any depth must halt the whole engine. Execution of the parent must **not** be resumed after a fatal
 error occurs in the child.
