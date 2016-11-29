@@ -251,7 +251,7 @@ separate sections.
 
 * [add][calc]
 * [and][calc]
-* bsppatch
+* [bsppatch]
 * [call][flow]
 * [callnz][flow]
 * [callz][flow]
@@ -343,6 +343,7 @@ separate sections.
 [seek]: #modifying-the-current-file-pointer
 [checksha1]: #checking-a-sha-1-hash
 [ipspatch]: #applying-an-ips-patch
+[bsppatch]: #applying-a-bsp-patch-contained-within-the-bsp
 
 ## Instruction description
 
@@ -798,3 +799,33 @@ defined as follows:
 6. Otherwise (that is, if the value read in step 4 was zero), read another 16-bit unsigned value (representing the
    count) followed by a single byte; repeatedly write this byte as many times as the count specifies starting at the
    position calculated in step 3, and then go back to step 2.
+
+### Applying a BSP patch contained within the BSP
+
+```
+bsppatch #variable, address, length
+```
+
+This instruction executes a BSP contained within the BSP. That is, it is used to create a child BSP that is forked from
+the current one and executed separately; the parent is suspended until the child finishes.
+
+The child BSP has its own variables, stack, instruction pointer and patch space, but it shares the file buffer and
+current file pointer with the parent; the file buffer and the current file pointer (including its state) are inherited
+from the parent script (the one executing the `bsppatch` instruction), and they can be modified freely by the child BSP
+(retaining the modifications when it exits).
+
+The child BSP's patch space is created with the length specified in the `bsppatch` instruction, and filled with data
+read from the parent's patch space starting at the specified address; a fatal error occurs if this causes the engine to
+read past the end of the parent's patch space. The child BSP's variables and instruction pointer are all initialized to
+zero, and its stack is initialized empty, just like when executing a BSP normally. Execution then resumes with the
+child, continuing until the child exits; only when the child exits, the `bsppatch` instruction of the parent can be
+completed. When the child exits, the variable passed to `bsppatch` in the parent is set to the child's exit status.
+
+The engine must not write out to the target file when the child exits, regardless of exit status; it must, instead,
+pass the exit status to the parent via the variable passed to `bsppatch`. The file buffer and current file position,
+being shared resources between the parent and the child, must also conserve their state when execution returns from the
+child to the parent.
+
+If the child's execution triggers a fatal error, this fatal error must be propagated to the parent; in other words,
+a fatal error at any depth must halt the whole engine. Execution of the parent must *not* be resumed after a fatal
+error occurs in the child.
