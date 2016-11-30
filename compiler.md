@@ -237,5 +237,5 @@ These pseudo-instructions include another file into the current one. The filenam
 it is a relative filename, it will be resolved relative to the current working directory of the compiler.
 
 The `include` pseudo-instruction will include the file as a source file, and therefore compile it as if it had been
-transcribed into the original source file in the position the `include` pseudo-instruction is; on the other hand, the
+transcribed into the original source file in the location the `include` pseudo-instruction is; on the other hand, the
 `incbin` pseudo-instruction will simply insert the contents of the binary file as a blob, without any parsing.
