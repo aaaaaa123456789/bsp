@@ -617,8 +617,11 @@ char * get_string_argument (const char * argument) {
   unsigned length = strlen(result) - 1;
   if (result[length] != '"') error_exit(1, "unquoted string");
   result[length] = 0;
-  char * pos;
-  while (pos = strstr(result, "\"\"")) memmove(pos + 1, pos + 2, strlen(pos + 1));
+  char * pos = result;
+  while (pos = strstr(pos, "\"\"")) {
+    pos ++;
+    memmove(pos, pos + 1, strlen(pos));
+  }
   result = realloc(result, strlen(result) + 1);
   return result;
 }
