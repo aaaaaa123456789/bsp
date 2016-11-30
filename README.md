@@ -10,4 +10,11 @@ turn allows arbitrarily complex patching and verification processes, including t
 different source and/or target files, or allowing the user of the patch to select which target to produce.
 
 This software is released to the public domain. For more information, view the (conventionally but inaccurately named)
-[LICENSE](LICENSE) file.
+[LICENSE][license] file.
+
+For information on the BSP format, defined by this project, read the [specification]. For information about the exact
+syntax and details that the compiler uses, read the [compiler documentation][compiler-docs].
+
+[license]: LICENSE
+[specification]: specification.md
+[compiler-docs]: compiler.md
