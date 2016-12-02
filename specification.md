@@ -113,8 +113,8 @@ of them must be considered a fatal error.
 |`0x1b`     |writehalfword         |   2|variable                                |
 |`0x1c`     |writeword             |   5|word                                    |
 |`0x1d`     |writeword             |   2|variable                                |
-|`0x1e`     |truncate              |   6|variable, word                          |
-|`0x1f`     |truncate              |   3|variable, variable                      |
+|`0x1e`     |truncate              |   5|word                                    |
+|`0x1f`     |truncate              |   2|variable                                |
 |`0x20`     |add                   |  10|variable, word, word                    |
 |`0x21`     |add                   |   7|variable, word, variable                |
 |`0x22`     |add                   |   7|variable, variable, word                |
