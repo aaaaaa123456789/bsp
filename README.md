@@ -1,7 +1,8 @@
 # bsp — Binary Script Patching
 
 This project focuses on creating binary patch files; that is, files that encode the conversion between a source and a
-target file, both of them being binary files regardless of internal structure.
+target file, both of them being binary files regardless of internal structure. This project also contains a patching
+library that can be used to apply said patches once created.
 
 Instead of following the typical approach of building a file containing the differences as pure data, this project aims
 towards building scripted patches — that is, patch files that contain a script that is executed in order to perform the
@@ -13,8 +14,20 @@ This software is released to the public domain. For more information, view the (
 [LICENSE][license] file.
 
 For information on the BSP format, defined by this project, read the [specification]. For information about the exact
-syntax and details that the compiler uses, read the [compiler documentation][compiler-docs].
+syntax and details that the compiler uses, read the [compiler documentation][compiler-docs]. For information about the
+patching library, read the corresponding [documentation][patcher-docs]; the library itself is available in the
+[`bsppatch.js`](bsppatch.js) file.
+
+A patching program for Node.js using this library is also available here, in the [`patcher.js`](patcher.js) file. This
+program uses the `bsppatch.js` library, and requires it to be in the same directory. It needs Node.js 4.x or higher to
+run. In order to use it, invoke it with the patch file, the input file and the output filename (in that order) as
+command-line arguments, like this:
+
+```
+node patcher.js patch.bsp input.dat output.dat
+```
 
 [license]: LICENSE
 [specification]: specification.md
 [compiler-docs]: compiler.md
+[patcher-docs]: patcher.md
