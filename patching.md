@@ -70,9 +70,9 @@ the `success`, `failure` and `error` callbacks to check the status of the proces
   exit status (indicating success).
 * `result`: it is the result of the patching process, which is the same value that is passed to the `error`, `failure`
   and `success` callbacks explained above. This property will be set according to the value of the `state` property,
-  containing the result value for the proper state (i.e., the value that would be passed to the corresponding callback,
-  since there is a one-to-one mapping between the callbacks and the higher values of the `state` property). This
-  property is meaningless when `state` is 0 or 1, and therefore will be set to `undefined` in that case.
+  containing the result value for the corresponding state (i.e., the value that would be passed to the corresponding
+  callback, since there is a one-to-one mapping between the callbacks and the higher values of the `state` property).
+  This property is meaningless when `state` is 0 or 1, and therefore will be set to `undefined` in that case.
 
 ## `run()` method
 
