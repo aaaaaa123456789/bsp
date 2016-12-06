@@ -15,7 +15,7 @@ function BSPPatcher (bsp_array_buffer, input_array_buffer) {
 
 The library uses mostly ECMAScript 5 features; however, it uses [Typed Arrays][typed-arrays] from ECMAScript 6. The
 practical implication of this is that the library will work in any modern browser or Node.js version, but most likely
-not in Internet Explorer.
+not in Internet Explorer (although it may work in IE10+ due to some added support for Typed Arrays).
 
 [typed-arrays]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays
 
