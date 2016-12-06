@@ -360,6 +360,7 @@ function BSPPatcher (bsp, input) {
   
   function write_data (position, address, len) {
     while (len --) file_buffer.set_byte(position ++, get_byte(address ++));
+    dirty = true;
   }
   
   function xor_data (position, address, len) {
@@ -368,6 +369,7 @@ function BSPPatcher (bsp, input) {
       value = (get_byte(address ++) ^ file_buffer.get_byte(position)) & 0xff;
       file_buffer.set_byte(position ++, value);
     }
+    dirty = true;
   }
 
   function opcode_parameters (opcode) {
@@ -645,6 +647,7 @@ function BSPPatcher (bsp, input) {
     if ((address + count) > 0xffffffff) throw "file position overflow";
     while (count --) file_buffer.set_byte(address ++, value);
     if (!current_file_pointer_locked) current_file_pointer = address;
+    dirty = true;
     return true;
   }
   
@@ -657,6 +660,7 @@ function BSPPatcher (bsp, input) {
       address += 2;
     }
     if (!current_file_pointer_locked) current_file_pointer = address;
+    dirty = true;
     return true;
   }
   
@@ -668,6 +672,7 @@ function BSPPatcher (bsp, input) {
       address += 4;
     }
     if (!current_file_pointer_locked) current_file_pointer = address;
+    dirty = true;
     return true;
   }
   
@@ -738,6 +743,7 @@ function BSPPatcher (bsp, input) {
         while (count --) file_buffer.set_byte(position ++, get_next_byte());
     }
     set_variable(variable, current_address);
+    dirty = true;
     return true;
   }
   
