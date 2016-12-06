@@ -30,4 +30,4 @@ node patcher.js patch.bsp input.dat output.dat
 [license]: LICENSE
 [specification]: specification.md
 [compiler-docs]: compiler.md
-[patcher-docs]: patcher.md
+[patcher-docs]: patching.md
