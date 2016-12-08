@@ -7,13 +7,14 @@
     function patch (button) {
       var form = document.forms[0];
       if ((form.bsp.files.length != 1) || (form.source.files.length != 1)) return alert("You must select a patch and an input file!");
+      var filename = form.bsp.files[0].name.split(".").slice(0, -1).concat(form.source.files[0].name.split(".").slice(1).slice(-1)).join(".");
       button.disabled = true;
       var bsp_data, input_data;
       var bsp_file_reader = new FileReader();
       bsp_file_reader.onload = function () {
         bsp_data = bsp_file_reader.result;
         if (input_data !== undefined) {
-          begin_patch(bsp_data, input_data);
+          begin_patch(bsp_data, input_data, filename);
           bsp_data = input_data = undefined;
         }
       }
@@ -21,7 +22,7 @@
       input_file_reader.onload = function () {
         input_data = input_file_reader.result;
         if (bsp_data !== undefined) {
-          begin_patch(bsp_data, input_data);
+          begin_patch(bsp_data, input_data, filename);
           bsp_data = input_data = undefined;
         }
       }
@@ -63,8 +64,15 @@
       } else
         messages.appendChild(div);
     }
+    
+    function escape_HTML (str) {
+      var result = "";
+      var pos;
+      for (pos = 0; pos < str.length; pos ++) result += "&#" + str.charCodeAt(pos) + ";";
+      return result;
+    }
 
-    function begin_patch (bsp, input) {
+    function begin_patch (bsp, input, filename) {
       var patcher = new BSPPatcher(bsp, input);
       var patch_result = document.getElementById("result");
       patcher.print = function (message) {
@@ -82,7 +90,7 @@
       }
       patcher.success = function (data) {
         var url = URL.createObjectURL(new Blob([data], {type: "application/octet-stream"}));
-        patch_result.innerHTML = "Patch succeeded! <a href=\"" + url + "\">Get file</a>";
+        patch_result.innerHTML = "Patch succeeded! <a href=\"" + escape_HTML(url) + "\" download=\"" + escape_HTML(filename) + "\">Get file</a>";
       }
       patcher.run();
     }
