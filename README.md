@@ -27,6 +27,10 @@ command-line arguments, like this:
 node patcher.js patch.bsp input.dat output.dat
 ```
 
+It is also possible to apply patches via a website. A sample patching website is available here, which should work in
+any modern browser; it is located in the [`sample.htm`][sample.htm] file, and it requires having the `bsppatch.js` file
+in the same directory for it to work.
+
 [license]: LICENSE
 [specification]: specification.md
 [compiler-docs]: compiler.md
