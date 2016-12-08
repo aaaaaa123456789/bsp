@@ -359,11 +359,13 @@ function BSPPatcher (bsp, input) {
   }
   
   function write_data (position, address, len) {
+    if (len === 0) return;
     while (len --) file_buffer.set_byte(position ++, get_byte(address ++));
     dirty = true;
   }
   
   function xor_data (position, address, len) {
+    if (len === 0) return;
     var value;
     while (len --) {
       value = (get_byte(address ++) ^ file_buffer.get_byte(position)) & 0xff;
@@ -642,6 +644,7 @@ function BSPPatcher (bsp, input) {
   }
   
   function fillbyte_opcode (count, value) {
+    if (count === 0) return true;
     var address = current_file_pointer;
     value &= 0xff;
     if ((address + count) > 0xffffffff) throw "file position overflow";
@@ -652,6 +655,7 @@ function BSPPatcher (bsp, input) {
   }
   
   function fillhalfword_opcode (count, value) {
+    if (count === 0) return true;
     var address = current_file_pointer;
     value &= 0xffff;
     if ((address + 2 * count) > 0xffffffff) throw "file position overflow";
@@ -665,6 +669,7 @@ function BSPPatcher (bsp, input) {
   }
   
   function fillword_opcode (count, value) {
+    if (count === 0) return true;
     var address = current_file_pointer;
     if ((address + 4 * count) > 0xffffffff) throw "file position overflow";
     while (count --) {
