@@ -1,2 +1,0 @@
-# bsp
-Binary Script Patching
