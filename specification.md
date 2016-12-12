@@ -764,7 +764,8 @@ The `lockpos` and `unlockpos` instructions set the current file pointer's state 
 
 The `pushpos` instruction pushes the value of the current file pointer into the stack, and the `poppos` instruction
 pops a value from the stack and sets the current file pointer to it. Note that it is a fatal error to execute `poppos`
-with an empty stack.
+with an empty stack. Also note that `poppos` does not update the current file pointer if it is in locked state
+(although it still pops a value, thus behaving as a dummy pop, or `stackshift -1`).
 
 ### Modifying the current file pointer
 
@@ -782,7 +783,8 @@ the specified value from the file buffer length and sets the current file pointe
 It is a fatal error to cause the calculations performed by the last three instructions to overflow.
 
 Note that no bounds checking is performed on the current file pointer: it is allowed to point to a position beyond the
-end of the file buffer by any amount.
+end of the file buffer by any amount. Also note that these instructions do nothing if the current file pointer is in
+locked state.
 
 ### Checking a SHA-1 hash
 
