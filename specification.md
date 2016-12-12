@@ -614,13 +614,19 @@ stackshift amount
 These instructions operate directly on the values in stack.
 
 The `stackread` instruction reads a value from the stack into a variable, and the `stackwrite` instruction writes a
-value to a position in stack. For both instructions, positions in stack are numbered from the current stack position
-upwards: the value that would be popped next is position 0, the following one in stack is position 1, and so on.
-Attempting to access a position in stack that doesn't exist (that is, a position that is greater or equal than the
-number of elements in the stack) is a fatal error.
+value to a position in stack. For both instructions, the position argument is treated as a _signed_ value: if it is
+positive, it refers to a position starting from the bottom of the stack (that is, where values would be pushed or
+popped next); and if it is negative, it refers to a position starting from the top of the stack (that is, where the
+very first value in the stack was pushed).
+
+Positive positions in stack are numbered from the current stack position upwards: the value that would be popped next
+is position 0, the following one in stack is position 1, and so on. Negative positions in stack are numbered downwards
+from the stack top: the very first value in the stack is position -1, the one pushed after that one is position -2, and
+so on. Attempting to access a position in stack that doesn't exist (that is, a position that is greater or equal than
+the number of elements in the stack, or less than minus that amount) is a fatal error.
 
 The `stackshift` instruction performs a mass push/pop, changing the stack size. The argument to this instruction is
-treated as a _signed_ value: if it is positive, as many zeros as the argument indicates are pushed into the stack,
+also treated as a _signed_ value: if it is positive, as many zeros as the argument indicates are pushed into the stack,
 making it larger; if it is negative, as many elements as the absolute value of the argument indicates are popped and
 stored nowhere, making the stack smaller (it is a fatal error to attempt to pop more values than the stack currently
 holds). An argument of zero makes the instruction do nothing.

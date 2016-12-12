@@ -373,6 +373,12 @@ function BSPPatcher (bsp, input) {
     }
     dirty = true;
   }
+  
+  function calculate_real_stack_position (position) {
+    if (position >= 0x80000000) position = frames[0].stack.length + (position - 0x100000000);
+    if ((position < 0) || (position >= frames[0].stack.length)) throw "invalid stack position";
+    return position;
+  }
 
   function opcode_parameters (opcode) {
     switch (opcode) {
@@ -754,14 +760,12 @@ function BSPPatcher (bsp, input) {
   }
   
   function stackwrite_opcode (position, value) {
-    if (position >= frames[0].stack.length) throw "invalid stack position";
-    frames[0].stack[position] = value;
+    frames[0].stack[calculate_real_stack_position(position)] = value;
     return true;
   }
   
   function stackread_opcode (variable, position) {
-    if (position >= frames[0].stack.length) throw "invalid stack position";
-    set_variable(variable, frames[0].stack[position]);
+    set_variable(variable, frames[0].stack[calculate_real_stack_position(position)]);
     return true;
   }
   
