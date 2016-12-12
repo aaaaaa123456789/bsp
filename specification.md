@@ -34,6 +34,8 @@ The execution model consists of the following elements:
   read-only value; writes or updates to the current file pointer must be silently discarded (without causing any
   warnings or other kinds of error messages) while in locked state.
 * A stack, unbounded in size, that contains word values. It is initialized empty.
+* A message buffer, unbounded in size (although engines may limit the size to a reasonable length and discard any data
+  added to it beyond that limit), that is initialized to an empty string.
 
 The patch space and the file buffer have a maximum size of 4,294,967,295 bytes. Attempting to write to the file buffer
 past its end increases its length (zero-filling any gaps that occur this way); attempting to read from either the file
@@ -243,6 +245,14 @@ of them must be considered a fatal error.
 |`0x9d`     |gethalfworddec        |   3|variable, variable                      |
 |`0x9e`     |getworddec            |   3|variable, variable                      |
 |`0x9f`     |decrement             |   2|variable                                |
+|`0xa0`     |bufstring             |   5|word                                    |
+|`0xa1`     |bufstring             |   2|variable                                |
+|`0xa2`     |bufchar               |   5|word                                    |
+|`0xa3`     |bufchar               |   2|variable                                |
+|`0xa4`     |bufnumber             |   5|word                                    |
+|`0xa5`     |bufnumber             |   2|variable                                |
+|`0xa6`     |printbuf              |   1|none                                    |
+|`0xa7`     |clearbuf              |   1|none                                    |
 
 ## Instruction set
 
@@ -252,10 +262,14 @@ separate sections.
 * [add][calc]
 * [and][calc]
 * [bsppatch]
+* [bufchar][msgbuffer]
+* [bufnumber][msgbuffer]
+* [bufstring][msgbuffer]
 * [call][flow]
 * [callnz][flow]
 * [callz][flow]
 * [checksha1]
+* [clearbuf][msgbuffer]
 * [decrement][var-basic]
 * [divide][calc]
 * [exit]
@@ -293,6 +307,7 @@ separate sections.
 * [poppos][pos]
 * [pos]
 * [print]
+* [printbuf][msgbuffer]
 * [push][stack-basic]
 * [pushpos][pos]
 * [readbyte][read]
@@ -329,6 +344,7 @@ separate sections.
 [conditionals]: #conditionals
 [exit]: #exiting
 [print]: #printing-messages
+[msgbuffer]: #manipulating-the-message-buffer
 [menu]: #option-menus
 [jumptable]: #jump-tables
 [stack-adv]: #advanced-stack-operations
@@ -489,6 +505,36 @@ in any way it can) or to treat it as a fatal error.
 An engine incapable of handling the full Unicode character set may choose to use a reduced character set and replace
 the remaining characters with a suitable substitution character; however, an engine must at least support the Latin
 letters (A-Z, a-z), digits (0-9), spaces, and the following punctuation characters: `'-,.;:#%&!?/()[]`.
+
+### Manipulating the message buffer
+
+```
+bufstring address
+bufchar any
+bufnumber any
+printbuf
+clearbuf
+```
+
+The first three instructions concatenate data at the end of the message buffer. The last two display it and clear it.
+
+The `bufstring` instruction concatenates a string (in the same format as for the `print` instruction) at the end of
+the message buffer. No separator is inserted before or after the string.
+
+The `bufchar` instruction appends a single Unicode character to the message buffer. An engine incapable of handling the
+full Unicode character set may choose to use a reduced character set and replace the remaining characters with suitable
+substitutes; it must however support at least the letters (A-Z, a-z), numbers (0-9) and basic punctuation characters
+(`'-,.;:#%&!?/()[]`). Passing a value that isn't a valid Unicode codepoint (`0x000000` to `0x00d7ff` and `0x00e000` to
+`0x10ffff`) is a fatal error.
+
+The `bufnumber` instruction appends the decimal representation of a number to the message buffer. The number is
+treated as a 32-bit unsigned value and converted to decimal, and printed using the regular digit characters (0-9,
+`U+0030` to `U+0039`). The shortest representation of the number is used; that is, no leading zeros are printed (other
+than a single `0` for the number zero itself).
+
+The `printbuf` instruction prints the contents of the message buffer as a message (as if it had been passed to the
+`print` instruction) and clears the buffer, resetting it to the empty string. The `clearbuf` instruction resets the
+message buffer to the empty string without printing it.
 
 ### Option menus
 
@@ -809,17 +855,18 @@ bsppatch #variable, address, length
 This instruction executes a BSP contained within the BSP. That is, it is used to create a child BSP that is forked from
 the current one and executed separately; the parent is suspended until the child finishes.
 
-The child BSP has its own variables, stack, instruction pointer and patch space, but it shares the file buffer and
-current file pointer with the parent; the file buffer and the current file pointer (including its state) are inherited
-from the parent script (the one executing the `bsppatch` instruction), and they can be modified freely by the child BSP
-(retaining the modifications when it exits).
+The child BSP has its own variables, stack, instruction pointer, message buffer and patch space, but it shares the file
+buffer and current file pointer with the parent; the file buffer and the current file pointer (including its state) are
+inherited from the parent script (the one executing the `bsppatch` instruction), and they can be modified freely by the
+child BSP (retaining the modifications when it exits).
 
 The child BSP's patch space is created with the length specified in the `bsppatch` instruction, and filled with data
 read from the parent's patch space starting at the specified address; a fatal error occurs if this causes the engine to
 read past the end of the parent's patch space. The child BSP's variables and instruction pointer are all initialized to
-zero, and its stack is initialized empty, just like when executing a BSP normally. Execution then resumes with the
-child, continuing until the child exits; only when the child exits, the `bsppatch` instruction of the parent can be
-completed. When the child exits, the variable passed to `bsppatch` in the parent is set to the child's exit status.
+zero, its message buffer is initialized to the empty string, and its stack is initialized empty, just like when
+executing a BSP normally. Execution then resumes with the child, continuing until the child exits; only when the child
+exits, the `bsppatch` instruction of the parent can be completed. When the child exits, the variable passed to
+`bsppatch` in the parent is set to the child's exit status.
 
 The engine must not write out to the target file when the child exits, regardless of exit status; it must, instead,
 pass the exit status to the parent via the variable passed to `bsppatch`. The file buffer and current file position,

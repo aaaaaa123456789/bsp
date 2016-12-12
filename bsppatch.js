@@ -376,12 +376,13 @@ function BSPPatcher (bsp, input) {
 
   function opcode_parameters (opcode) {
     switch (opcode) {
-      case 0x00: case 0x01: case 0x80: case 0x81: case 0x82: case 0x92: case 0x93:
+      case 0x00: case 0x01: case 0x80: case 0x81: case 0x82: case 0x92: case 0x93: case 0xa6: case 0xa7:
         return [];
       case 0x02: case 0x04: case 0x06: case 0x08: case 0x1c: case 0x1e: case 0x60: case 0x62: case 0x64: case 0x66: case 0x68: case 0x8e:
+      case 0xa0: case 0xa2: case 0xa4:
         return [next_patch_word];
       case 0x03: case 0x05: case 0x07: case 0x09: case 0x19: case 0x1b: case 0x1d: case 0x1f: case 0x61: case 0x63: case 0x65: case 0x67:
-      case 0x69: case 0x83: case 0x8f: case 0x90: case 0x91:
+      case 0x69: case 0x83: case 0x8f: case 0x90: case 0x91: case 0xa1: case 0xa3: case 0xa5:
         return [next_patch_variable];
       case 0x10: case 0x12: case 0x14: case 0x16: case 0x6a: case 0x84: case 0x86: case 0x8c:
         return [next_patch_byte, next_patch_word];
@@ -848,6 +849,37 @@ function BSPPatcher (bsp, input) {
     set_variable(variable, (get_variable(variable) - 1) >>> 0);
     return true;
   }
+  
+  function bufstring_opcode (address) {
+    frames[0].message_buffer += utf8_decode(address);
+    return true;
+  }
+  
+  function bufchar_opcode (character) {
+    if ((character > 0x10ffff) || ((character & 0xfffff800) === 0xd800)) throw "invalid Unicode character";
+    if (character > 0xffff)
+      frames[0].message_buffer += String.fromCharCode(0xd800 | ((character - 0x10000) >>> 10)) + String.fromCharCode(0xdc00 | (character & 0x3ff));
+    else if (character > 0)
+      frames[0].message_buffer += String.fromCharCode(character);
+    return true;
+  }
+  
+  function bufnumber_opcode (value) {
+    frames[0].message_buffer += value.toString();
+    return true;
+  }
+  
+  function printbuf_opcode () {
+    var msg = frames[0].message_buffer;
+    frames[0].message_buffer = "";
+    queue_function(function () {self.print(msg);});
+    return false;
+  }
+  
+  function clearbuf_opcode () {
+    frames[0].message_buffer = "";
+    return true;
+  }
 
   function opcode_function (opcode) {
     switch (opcode) {
@@ -922,6 +954,11 @@ function BSPPatcher (bsp, input) {
       case 0x9d: return gethalfworddec_opcode;
       case 0x9e: return getworddec_opcode;
       case 0x9f: return decrement_opcode;
+      case 0xa0: case 0xa1: return bufstring_opcode;
+      case 0xa2: case 0xa3: return bufchar_opcode;
+      case 0xa4: case 0xa5: return bufnumber_opcode;
+      case 0xa6: return printbuf_opcode;
+      case 0xa7: return clearbuf_opcode;
       default:   throw "undefined opcode";
     }
   }
@@ -936,7 +973,8 @@ function BSPPatcher (bsp, input) {
       variables: new Uint32Array(256),
       patch_space: patch,
       stack: [],
-      waiting_var: undefined
+      waiting_var: undefined,
+      message_buffer: ""
     };
   }
 
