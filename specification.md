@@ -56,13 +56,13 @@ the error and abort immediately.
 
 The execution of the patch results in a word value called an exit status, similar in spirit to the exit status of a
 program in several operating systems. An exit status of zero indicates success; other values must be treated as failure
-and thus handled as errors. When a BPS exits with a status of zero, the contents of the file buffer must be written out
+and thus handled as errors. When a BSP exits with a status of zero, the contents of the file buffer must be written out
 to the target file as the output of the patching process.
 
-Execution of the BPS proceeds one instruction at a time, in the usual way for this format: the byte pointed by the
+Execution of the BSP proceeds one instruction at a time, in the usual way for this format: the byte pointed by the
 instruction pointer is read, which determines the opcode; the operands (if any) for that opcode are read as well; and
 the instruction pointer is incremented by the total amount of bytes read; the instruction is then executed. Execution
-continues this way until the BPS exits (via the corresponding instruction). Note that some instructions will modify
+continues this way until the BSP exits (via the corresponding instruction). Note that some instructions will modify
 the instruction pointer upon execution.
 
 ## Opcodes
@@ -467,7 +467,7 @@ ifge #variable, any, address
 ```
 
 These instructions conditionally jump to the specified address, based on the condition specified by the instruction
-itself. Respectively, the conditions are that the value is equal, not equal, less than, less than or equal, greater
+itself. Respectively, the conditions are that the variable is equal, not equal, less than, less than or equal, greater
 than, and greater than or equal than the second argument to the instruction.
 
 ### Exiting
