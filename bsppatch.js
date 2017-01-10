@@ -379,22 +379,39 @@ function BSPPatcher (bsp, input) {
     if ((position < 0) || (position >= frames[0].stack.length)) throw "invalid stack position";
     return position;
   }
+  
+  function array_repeat (value, count) {
+    var pos, array = [];
+    for (pos = 31; pos >= 0; pos --) {
+      array = array.concat(array);
+      if ((count >> pos) & 1) array.push(value);
+    }
+    return array;
+  }
+  
+  function resize_stack (size) {
+    if (size < frames[0].stack.length) {
+      frames[0].stack.splice(0, frames[0].stack.length - size);
+      return;
+    }
+    while (frames[0].stack.length < size) push_to_stack(0);
+  }
 
   function opcode_parameters (opcode) {
     switch (opcode) {
       case 0x00: case 0x01: case 0x80: case 0x81: case 0x82: case 0x92: case 0x93: case 0xa6: case 0xa7:
         return [];
       case 0x02: case 0x04: case 0x06: case 0x08: case 0x1c: case 0x1e: case 0x60: case 0x62: case 0x64: case 0x66: case 0x68: case 0x8e:
-      case 0xa0: case 0xa2: case 0xa4:
+      case 0xa0: case 0xa2: case 0xa4: case 0xa8:
         return [next_patch_word];
       case 0x03: case 0x05: case 0x07: case 0x09: case 0x19: case 0x1b: case 0x1d: case 0x1f: case 0x61: case 0x63: case 0x65: case 0x67:
-      case 0x69: case 0x83: case 0x8f: case 0x90: case 0x91: case 0xa1: case 0xa3: case 0xa5:
+      case 0x69: case 0x83: case 0x8f: case 0x90: case 0x91: case 0xa1: case 0xa3: case 0xa5: case 0xa9:
         return [next_patch_variable];
       case 0x10: case 0x12: case 0x14: case 0x16: case 0x6a: case 0x84: case 0x86: case 0x8c:
         return [next_patch_byte, next_patch_word];
       case 0x11: case 0x13: case 0x15: case 0x17: case 0x6b: case 0x85: case 0x87: case 0x8d:
         return [next_patch_byte, next_patch_variable];
-      case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f: case 0x18: case 0x9b: case 0x9f:
+      case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f: case 0x18: case 0x9b: case 0x9f: case 0xaa:
         return [next_patch_byte];
       case 0x1a:
         return [next_patch_halfword];
@@ -430,7 +447,7 @@ function BSPPatcher (bsp, input) {
         return [next_patch_word, next_patch_halfword];
       case 0x76:
         return [next_patch_variable, next_patch_halfword];
-      case 0x98: case 0x99: case 0x9a: case 0x9c: case 0x9d: case 0x9e:
+      case 0x98: case 0x99: case 0x9a: case 0x9c: case 0x9d: case 0x9e: case 0xab:
         return [next_patch_byte, next_patch_byte];
       default:
         throw "undefined opcode";
@@ -772,14 +789,7 @@ function BSPPatcher (bsp, input) {
   function stackshift_opcode (amount) {
     if (amount >= 0x80000000) amount -= 0x100000000;
     if ((amount + frames[0].stack.length) < 0) throw "stack underflow";
-    while (amount > 0) {
-      amount --;
-      push_to_stack(0);
-    }
-    while (amount < 0) {
-      amount ++;
-      pop_from_stack();
-    }
+    resize_stack(amount + frames[0].stack.length);
     return true;
   }
   
@@ -884,6 +894,47 @@ function BSPPatcher (bsp, input) {
     frames[0].message_buffer = "";
     return true;
   }
+  
+  function setstacksize_opcode (size) {
+    resize_stack(size);
+    return true;
+  }
+  
+  function getstacksize_opcode (variable) {
+    var size = frames[0].stack.length;
+    if (size > 0xffffffff) size = 0xffffffff;
+    set_variable(variable, size);
+    return true;
+  }
+  
+  function bit_shifting_opcode (bitflags, variable) {
+    var shift_count = bitflags & 31;
+    var shift_type = (bitflags >> 5) & 3;
+    var value;
+    if (bitflags & 0x80)
+      value = next_patch_variable();
+    else
+      value = next_patch_word();
+    if (shift_count === 0) shift_count = next_patch_variable() & 31;
+    switch (shift_type) {
+      case 0: // shiftleft
+        value <<= shift_count;
+        value >>>= 0;
+        break;
+      case 1: // shiftright
+        value >>>= shift_count;
+        break;
+      case 2: // rotateleft
+        value = (value << shift_count) | (value >>> (32 - shift_count));
+        value >>>= 0;
+        break;
+      case 3: // shiftrightarith
+        value >>= shift_count;
+        value >>>= 0;
+    }
+    set_variable(variable, value);
+    return true;
+  }
 
   function opcode_function (opcode) {
     switch (opcode) {
@@ -963,6 +1014,9 @@ function BSPPatcher (bsp, input) {
       case 0xa4: case 0xa5: return bufnumber_opcode;
       case 0xa6: return printbuf_opcode;
       case 0xa7: return clearbuf_opcode;
+      case 0xa8: case 0xa9: return setstacksize_opcode;
+      case 0xaa: return getstacksize_opcode;
+      case 0xab: return bit_shifting_opcode;
       default:   throw "undefined opcode";
     }
   }
