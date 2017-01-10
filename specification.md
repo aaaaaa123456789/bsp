@@ -269,12 +269,12 @@ instructions; the next byte is divided into three bit fields, as follows (where 
 
 The opcode is determined by the shift type, as follows:
 
-|Shift type|Opcode                |
-|:--------:|:---------------------|
-|         0|`shiftleft`           |
-|         1|`shiftright`          |
-|         2|`rotateleft`          |
-|         3|`shiftrightarith`     |
+|Shift type|Opcode              |
+|:--------:|:-------------------|
+|         0|shiftleft           |
+|         1|shiftright          |
+|         2|rotateleft          |
+|         3|shiftrightarith     |
 
 If the shift count is 0, the shift count is read from the lower 5 bits of a variable; a byte will be added after the
 rest of the operands indicating which variable. Finally, the type of the shift operand is determined by the
