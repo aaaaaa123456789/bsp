@@ -253,6 +253,42 @@ of them must be considered a fatal error.
 |`0xa5`     |bufnumber             |   2|variable                                |
 |`0xa6`     |printbuf              |   1|none                                    |
 |`0xa7`     |clearbuf              |   1|none                                    |
+|`0xa8`     |setstacksize          |   5|word                                    |
+|`0xa9`     |setstacksize          |   2|variable                                |
+|`0xaa`     |getstacksize          |   2|variable                                |
+|`0xab`     |_(bit shifts)_        |  --|_(see below)_                           |
+
+### Bit shifting opcodes
+
+Bit shifting opcodes are defined by the byte that follows the opcode byte. The first byte is always `0xab` for these
+instructions; the next byte is divided into three bit fields, as follows (where bit 0 is the least significant):
+
+* Bit 7: variable/immediate flag
+* Bits 6-5: shift type
+* Bits 4-0: shift count
+
+The opcode is determined by the shift type, as follows:
+
+|Shift type|Opcode                |
+|:--------:|:---------------------|
+|         0|`shiftleft`           |
+|         1|`shiftright`          |
+|         2|`rotateleft`          |
+|         3|`shiftrightarith`     |
+
+If the shift count is 0, the shift count is read from the lower 5 bits of a variable; a byte will be added after the
+rest of the operands indicating which variable. Finally, the type of the shift operand is determined by the
+variable/immediate flag: if the flag is 0, the operand is an immediate; if it is 1, the operand is a variable.
+
+This is summarized in the following table (note that the operand list doesn't include the byte that comes after the
+opcode byte, with the bitfields as specified above):
+
+|V/I flag|Shift count|Size|Operands                       |
+|:------:|----------:|---:|:------------------------------|
+|       0|          0|   8|variable, word, variable       |
+|       0|      not 0|   7|variable, word                 |
+|       1|          0|   5|variable, variable, variable   |
+|       1|      not 0|   4|variable, variable             |
 
 ## Instruction set
 
@@ -282,6 +318,7 @@ separate sections.
 * [gethalfword][get]
 * [gethalfworddec][get]
 * [gethalfwordinc][get]
+* [getstacksize][stack-size]
 * [getword][get]
 * [getworddec][get]
 * [getwordinc][get]
@@ -317,11 +354,16 @@ separate sections.
 * [retnz][flow]
 * [return][flow]
 * [retz][flow]
+* [rotateleft][bit-shifts]
 * [seek]
 * [seekback][seek]
 * [seekend][seek]
 * [seekfwd][seek]
 * [set][var-basic]
+* [setstacksize][stack-size]
+* [shiftleft][bit-shifts]
+* [shiftright][bit-shifts]
+* [shiftrightarith][bit-shifts]
 * [stackread][stack-adv]
 * [stackshift][stack-adv]
 * [stackwrite][stack-adv]
@@ -339,6 +381,7 @@ separate sections.
 [nop]: #no-operation
 [var-basic]: #basic-variable-operations
 [calc]: #arithmetical-and-logical-instructions
+[bit-shifts]: #bit-shifting-operations
 [stack-basic]: #basic-stack-operations
 [flow]: #control-flow
 [conditionals]: #conditionals
@@ -348,6 +391,7 @@ separate sections.
 [menu]: #option-menus
 [jumptable]: #jump-tables
 [stack-adv]: #advanced-stack-operations
+[stack-size]: #resizing-the-stack
 [get]: #reading-values-from-patch-space
 [read]: #reading-values-from-the-file-buffer
 [write]: #writing-values-to-the-file-buffer
@@ -414,6 +458,39 @@ Note that the script compiler accepts a two-operand shorthand for these instruct
 full three-operand form by repeating the first operand. (That is, `add #var, 3` is converted to `add #var, #var, 3`
 prior to compilation.) This shorthand is a feature of the compiler, not part of the specification for the instructions;
 the instructions (in the binary file) can only exist in three-operand form.
+
+### Bit shifting operations
+
+```
+shiftleft #variable, any, count
+shiftright #variable, any, count
+shiftrightarith #variable, any, count
+rotateleft #variable, any, count
+```
+
+These instructions shift the value in the operand by the amount of bits specified in the count; bit counts of 1 to 31
+bits are allowed. (An immediate bit count of 0 is not valid; in the script compiler language, specifying a bit count of
+0 will cause the instruction to be encoded as a `set` instruction.) If the bit count is a variable, then only the five
+least significant bits of that variable will be used as bit count; the rest are silently truncated. (A bit count of 0
+as a result of using a variable bit count is acceptable.)
+
+The `shiftleft` and `shiftright` instructions shift the value in the corresponding direction, filling the shifted bits
+with zeros. The `shiftrightarith` behaves like `shiftright`, but extends the sign bit (the most significant bit)
+instead; if this bit is 1, the shifted bits will be filled with ones. The `rotateleft` instruction shifts the value to
+the left and inserts the bits that are dropped from the value on the right: a left rotation of 4 bits on the value
+0x12345678 will generate the value 0x23456781.
+
+Note that no `rotateright` instruction exists; the same effect can be achieved by negating the rotation count and using
+a `rotateleft`
+
+As with the arithmetical and logical instructions, the script compiler accepts a two-operand shorthand for these
+instructions, that is expanded to the full three-operand form by repeating the first operand: `shiftleft #var, 2` will
+be expanded to `shiftleft #var, #var, 2` prior to compilation. This is a feature of the compiler, not part of the
+specification for the instructions; the instructions (in the binary file format) only exist in three-operand form.
+
+Note on encoding: the last operand, the bit count, is already encoded in the second byte of the instruction (which
+selects the opcode and the operand types) when it is an immediate, and therefore will be out of order. (When it is a
+variable, it will be encoded explicitly as the last byte of the instruction, as usual.)
 
 ### Basic stack operations
 
@@ -630,6 +707,23 @@ also treated as a _signed_ value: if it is positive, as many zeros as the argume
 making it larger; if it is negative, as many elements as the absolute value of the argument indicates are popped and
 stored nowhere, making the stack smaller (it is a fatal error to attempt to pop more values than the stack currently
 holds). An argument of zero makes the instruction do nothing.
+
+### Resizing the stack
+
+```
+getstacksize #variable
+setstacksize any
+```
+
+These instructions manipulate the size of the stack directly.
+
+The `getstacksize` instruction stores the size of the stack (in number of words) in the specified variable. If the size
+of the stack is too large to be stored in a word, then 0xffffffff is stored.
+
+The `setstacksize` instruction changes the size of the stack to be the specified value. If this value is larger than
+the current size of the stack, enough zeros are pushed to make the stack as large as needed; if this value is smaller
+than the current size of the stack, enough values are popped (and stored nowhere) as to reduce the stack to the
+specified size.
 
 ### Reading values from patch space
 
