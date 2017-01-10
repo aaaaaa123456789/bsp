@@ -481,7 +481,7 @@ the left and inserts the bits that are dropped from the value on the right: a le
 0x12345678 will generate the value 0x23456781.
 
 Note that no `rotateright` instruction exists; the same effect can be achieved by negating the rotation count and using
-a `rotateleft`
+a `rotateleft` instruction.
 
 As with the arithmetical and logical instructions, the script compiler accepts a two-operand shorthand for these
 instructions, that is expanded to the full three-operand form by repeating the first operand: `shiftleft #var, 2` will
