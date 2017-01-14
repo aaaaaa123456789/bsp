@@ -478,7 +478,7 @@ The `shiftleft` and `shiftright` instructions shift the value in the correspondi
 with zeros. The `shiftrightarith` behaves like `shiftright`, but extends the sign bit (the most significant bit)
 instead; if this bit is 1, the shifted bits will be filled with ones. The `rotateleft` instruction shifts the value to
 the left and inserts the bits that are dropped from the value on the right: a left rotation of 4 bits on the value
-0x12345678 will generate the value 0x23456781.
+`0x12345678` will generate the value `0x23456781`.
 
 Note that no `rotateright` instruction exists; the same effect can be achieved by negating the rotation count and using
 a `rotateleft` instruction.
