@@ -718,7 +718,7 @@ setstacksize any
 These instructions manipulate the size of the stack directly.
 
 The `getstacksize` instruction stores the size of the stack (in number of words) in the specified variable. If the size
-of the stack is too large to be stored in a word, then 0xffffffff is stored.
+of the stack is too large to be stored in a word, then `0xffffffff` is stored.
 
 The `setstacksize` instruction changes the size of the stack to be the specified value. If this value is larger than
 the current size of the stack, enough zeros are pushed to make the stack as large as needed; if this value is smaller
