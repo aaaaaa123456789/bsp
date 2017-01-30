@@ -887,13 +887,13 @@ checksha1 #variable, address
 ```
 
 This instruction calculates the SHA-1 hash of the current contents of the file buffer (the current file pointer is not
-read or updated by this instruction), and compares to the hash stored in the patch space at the specified address. The
-hash is stored as a 20-byte value, most significant byte first for convenience. The hash is to be calculated as
+read or updated by this instruction), and compares it to the hash stored in the patch space at the specified address.
+The hash is stored as a 20-byte value, most significant byte first for convenience. The hash is to be calculated as
 specified by the formal specification in [RFC 3174][rfc3174].
 
-The comparison returns a bit mask indicated setting a bit for each byte that fails the comparison: bit 0 is set if the
-first byte of the real hash differs from the first byte of the compared hash, and so on. For instance, knowing that the
-SHA-1 hash for an empty input is `da39a3ee5e6b4b0d3255bfef95601890afd80709`, the following script:
+The comparison returns a bit mask, which sets a bit for each byte that fails the comparison: bit 0 is set if the first
+byte of the real hash differs from the first byte of the compared hash, and so on. For instance, knowing that the SHA-1
+hash for an empty input is `da39a3ee5e6b4b0d3255bfef95601890afd80709`, the following script:
 
 ```
   checksha1 #result, .hash
