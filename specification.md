@@ -257,6 +257,10 @@ of them must be considered a fatal error.
 |`0xa9`     |setstacksize          |   2|variable                                |
 |`0xaa`     |getstacksize          |   2|variable                                |
 |`0xab`     |_(bit shifts)_        |  --|_(see below)_                           |
+|`0xac`     |getfilebyte           |   2|variable                                |
+|`0xad`     |getfilehalfword       |   2|variable                                |
+|`0xae`     |getfileword           |   2|variable                                |
+|`0xaf`     |getvariable           |   3|variable, variable                      |
 
 ### Bit shifting opcodes
 
@@ -315,10 +319,14 @@ separate sections.
 * [getbyte][get]
 * [getbytedec][get]
 * [getbyteinc][get]
+* [getfilebyte][read]
+* [getfilehalfword][read]
+* [getfileword][read]
 * [gethalfword][get]
 * [gethalfworddec][get]
 * [gethalfwordinc][get]
 * [getstacksize][stack-size]
+* [getvariable][var-basic]
 * [getword][get]
 * [getworddec][get]
 * [getwordinc][get]
@@ -427,14 +435,21 @@ This instruction does nothing at all. It can be used, for instance, as a filler.
 set #variable, any
 increment #variable
 decrement #variable
+getvariable #variable, #number
 ```
 
 The `set` instruction sets the variable's value to the specified value, which can be an immediate value or another
 variable.
 
-The `increment` and `decrement` respectively add and subtract one from the specified variable. While they are
-equivalent to using `add #variable, #variable, 1` or `subtract #variable, #variable, 1`, they are available as shorter
-forms (that also use fewer bytes in the BSP file).
+The `increment` and `decrement` instructions respectively add and subtract one from the specified variable. While they
+are equivalent to using `add #variable, #variable, 1` or `subtract #variable, #variable, 1`, they are available as
+shorter forms (that also use fewer bytes in the BSP file).
+
+The `getvariable` instruction sets a variable to the value of a variable whose number matches the value of the second
+argument. That is, if variable 1 has the value 5, then `getvariable #2, #1` would set variable 2 to the value of
+variable 5. (Note that the second argument to `getvariable` can't be an immediate value, because that would be
+equivalent to a `set` instruction: `getvariable #2, 5` would be the same as `set #2, #5`. Also note that only the least
+significant byte of the second argument's value is used; the upper bytes are ignored.)
 
 ### Arithmetical and logical instructions
 
@@ -754,11 +769,18 @@ immediate address. (Note that a reference to a label is compiled as an immediate
 readbyte #variable
 readhalfword #variable
 readword #variable
+
+getfilebyte #variable
+getfilehalfword #variable
+getfileword #variable
 ```
 
-These instructions read a value from the file buffer, located at the position given by the current file pointer. The
-current file pointer itself is incremented by the size of the value read (1, 2 or 4) after reading the value, unless it
-is in locked state. Halfwords and words are read in little-endian form.
+These first group of instructions read a value from the file buffer, located at the position given by the current file
+pointer. The current file pointer itself is incremented by the size of the value read (1, 2 or 4) after reading the
+value, unless it is in locked state. Halfwords and words are read in little-endian form.
+
+The instructions in the second group perform the same task as their counterparts in the first group, but they don't
+update the current file pointer after reading, regardless of whether it is in locked or unlocked state.
 
 It is a fatal error to attempt to read beyond the end of the file buffer.
 
