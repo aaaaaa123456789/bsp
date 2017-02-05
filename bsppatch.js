@@ -257,24 +257,24 @@ function BSPPatcher (bsp, input) {
     current_file_pointer = value >>> 0;
   }
 
-  function read_byte () {
+  function read_byte (increment_file_pointer) {
     if (current_file_pointer >= file_buffer.size()) throw "attempted to read past the end of the file buffer";
     var result = file_buffer.get_byte(current_file_pointer);
-    update_current_file_pointer(current_file_pointer + 1);
+    if (increment_file_pointer) update_current_file_pointer(current_file_pointer + 1);
     return result;
   }
 
-  function read_halfword () {
+  function read_halfword (increment_file_pointer) {
     if ((current_file_pointer + 2) > file_buffer.size()) throw "attempted to read past the end of the file buffer";
     var result = file_buffer.get_halfword(current_file_pointer);
-    update_current_file_pointer(current_file_pointer + 2);
+    if (increment_file_pointer) update_current_file_pointer(current_file_pointer + 2);
     return result;
   }
 
-  function read_word () {
+  function read_word (increment_file_pointer) {
     if ((current_file_pointer + 4) > file_buffer.size()) throw "attempted to read past the end of the file buffer";
     var result = file_buffer.get_word(current_file_pointer);
-    update_current_file_pointer(current_file_pointer + 4);
+    if (increment_file_pointer) update_current_file_pointer(current_file_pointer + 4);
     return result;
   }
 
@@ -409,9 +409,10 @@ function BSPPatcher (bsp, input) {
         return [next_patch_variable];
       case 0x10: case 0x12: case 0x14: case 0x16: case 0x6a: case 0x84: case 0x86: case 0x8c:
         return [next_patch_byte, next_patch_word];
-      case 0x11: case 0x13: case 0x15: case 0x17: case 0x6b: case 0x85: case 0x87: case 0x8d:
+      case 0x11: case 0x13: case 0x15: case 0x17: case 0x6b: case 0x85: case 0x87: case 0x8d: case 0xaf:
         return [next_patch_byte, next_patch_variable];
-      case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f: case 0x18: case 0x9b: case 0x9f: case 0xaa:
+      case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f: case 0x18: case 0x9b: case 0x9f: case 0xaa: case 0xac: case 0xad:
+      case 0xae:
         return [next_patch_byte];
       case 0x1a:
         return [next_patch_halfword];
@@ -490,17 +491,17 @@ function BSPPatcher (bsp, input) {
   }
 
   function readbyte_opcode (variable) {
-    set_variable(variable, read_byte());
+    set_variable(variable, read_byte(true));
     return true;
   }
 
   function readhalfword_opcode (variable) {
-    set_variable(variable, read_halfword());
+    set_variable(variable, read_halfword(true));
     return true;
   }
 
   function readword_opcode (variable) {
-    set_variable(variable, read_word());
+    set_variable(variable, read_word(true));
     return true;
   }
 
@@ -935,6 +936,26 @@ function BSPPatcher (bsp, input) {
     set_variable(variable, value);
     return true;
   }
+  
+  function getfilebyte_opcode (variable) {
+    set_variable(variable, read_byte(false));
+    return true;
+  }
+  
+  function getfilehalfword_opcode (variable) {
+    set_variable(variable, read_halfword(false));
+    return true;
+  }
+  
+  function getfileword_opcode (variable) {
+    set_variable(variable, read_word(false));
+    return true;
+  }
+  
+  function getvariable_opcode (variable, num) {
+    set_variable(variable, get_variable(num));
+    return true;
+  }
 
   function opcode_function (opcode) {
     switch (opcode) {
@@ -1017,6 +1038,10 @@ function BSPPatcher (bsp, input) {
       case 0xa8: case 0xa9: return setstacksize_opcode;
       case 0xaa: return getstacksize_opcode;
       case 0xab: return bit_shifting_opcode;
+      case 0xac: return getfilebyte_opcode;
+      case 0xad: return getfilehalfword_opcode;
+      case 0xae: return getfileword_opcode;
+      case 0xaf: return getvariable_opcode;
       default:   throw "undefined opcode";
     }
   }
