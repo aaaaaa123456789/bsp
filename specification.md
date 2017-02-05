@@ -775,7 +775,7 @@ getfilehalfword #variable
 getfileword #variable
 ```
 
-The first group of instructions read a value from the file buffer, located at the position given by the current file
+The first group of instructions reads a value from the file buffer, located at the position given by the current file
 pointer. The current file pointer itself is incremented by the size of the value read (1, 2 or 4) after reading the
 value, unless it is in locked state. Halfwords and words are read in little-endian form.
 
