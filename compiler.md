@@ -177,7 +177,7 @@ Just like the data pseudo-instructions (`db`, `dh` and `dw`), this pseudo-instru
 hexdata hexstring
 ```
 
-This pseudo-instruction inserts raw data given in hexadecimal, or arbitrary length. The arguments must be sequences of
+This pseudo-instruction inserts raw data given in hexadecimal, of arbitrary length. The arguments must be sequences of
 hexadecimal digits of any length (hexadecimal digits being 0-9, A-F, a-f); if any argument has an odd length, it is
 padded with an extra 0 digit at the end to make it even.
 
