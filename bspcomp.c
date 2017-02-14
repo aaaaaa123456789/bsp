@@ -91,12 +91,14 @@ void one_variable_command(int, char **);
 void one_variable_one_argument_command(int, char **);
 void one_variable_two_arguments_command(int, char **);
 void two_variables_command(int, char **);
+void two_variables_two_arguments_command(int, char **);
 void one_byte_argument_command(int, char **);
 void one_halfword_argument_command(int, char **);
 void calculation_command(int, char **);
 void bit_shift_command(int, char **);
 void one_argument_one_byte_argument(int, char **);
 void one_argument_one_halfword_argument(int, char **);
+void mulacum_command(int, char **);
 void standard_command(unsigned char, unsigned char, unsigned char, char **);
 void data_command(int, char **);
 void hexdata_command(int, char **);
@@ -115,6 +117,7 @@ struct script_data * script_data = NULL;
 
 struct command script_commands[] = {
   {"add",               0x20, &calculation_command},
+  {"addcarry",          0xb0, &two_variables_two_arguments_command},
   {"align",             0,    &align_command},
   {"and",               0x34, &calculation_command},
   {"bsppatch",          0x94, &one_variable_two_arguments_command},
@@ -167,7 +170,10 @@ struct command script_commands[] = {
   {"jumpz",             0x58, &one_variable_one_argument_command},
   {"length",            0x0b, &one_variable_command},
   {"lockpos",           0x80, &no_arguments_command},
+  {"longmul",           0xb8, &two_variables_two_arguments_command},
+  {"longmulacum",       0xbc, &two_variables_two_arguments_command},
   {"menu",              0x6a, &one_variable_one_argument_command},
+  {"mulacum",           0xbc, &mulacum_command},
   {"multiply",          0x28, &calculation_command},
   {"nop",               0x00, &no_arguments_command},
   {"or",                0x38, &calculation_command},
@@ -199,6 +205,7 @@ struct command script_commands[] = {
   {"stackshift",        0x8e, &one_argument_command},
   {"stackwrite",        0x88, &two_arguments_command},
   {"string",            0,    &string_command},
+  {"subborrow",         0xb4, &two_variables_two_arguments_command},
   {"subtract",          0x24, &calculation_command},
   {"truncate",          0x1e, &one_argument_command},
   {"truncatepos",       0x82, &no_arguments_command},
@@ -673,6 +680,10 @@ void two_variables_command (int opcode_byte, char ** arguments) {
   standard_command(opcode_byte, 2, 0, arguments);
 }
 
+void two_variables_two_arguments_command (int opcode_byte, char ** arguments) {
+  standard_command(opcode_byte, 2, 2, arguments);
+}
+
 void one_byte_argument_command (int opcode_byte, char ** arguments) {
   if (count_parameters(arguments) != 1) error_exit(1, "command expects 1 argument(s), got %u", count_parameters(arguments));
   struct argument * argument = get_argument(*arguments);
@@ -850,6 +861,37 @@ void one_argument_one_halfword_argument (int opcode_byte, char ** arguments) {
   }
   free(argument);
   *buffer = opcode_byte;
+  append_data_to_script(buffer, current - buffer);
+}
+
+void mulacum_command (int opcode_byte, char ** arguments) {
+  if (count_parameters(arguments) != 3) error_exit(1, "command expects 3 argument(s), got %u", count_parameters(arguments));
+  struct argument * argument = get_argument(*(arguments ++));
+  char buffer[11];
+  char * current = buffer + 3;
+  unsigned char arg_number = 2;
+  *buffer = opcode_byte;
+  if (argument -> kind != 1) error_exit(1, "argument must be a variable");
+  buffer[1] = buffer[2] = argument -> value;
+  free(argument);
+  while (arg_number --) {
+    argument = get_argument(*(arguments ++));
+    switch (argument -> kind) {
+      case 0:
+        write_word_to_buffer(current, argument -> value);
+        current += 4;
+        break;
+      case 1:
+        *(current ++) = argument -> value;
+        *buffer |= 1 << arg_number;
+        break;
+      case 2:
+        create_reference(argument -> reference, script_data -> length + (current - buffer));
+        memset(current, 0, 4);
+        current += 4;
+    }
+    free(argument);
+  }
   append_data_to_script(buffer, current - buffer);
 }
 
