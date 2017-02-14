@@ -450,6 +450,14 @@ function BSPPatcher (bsp, input) {
         return [next_patch_variable, next_patch_halfword];
       case 0x98: case 0x99: case 0x9a: case 0x9c: case 0x9d: case 0x9e: case 0xab:
         return [next_patch_byte, next_patch_byte];
+      case 0xb0: case 0xb4: case 0xb8: case 0xbc:
+        return [next_patch_byte, next_patch_byte, next_patch_word, next_patch_word];
+      case 0xb1: case 0xb5: case 0xb9: case 0xbd:
+        return [next_patch_byte, next_patch_byte, next_patch_word, next_patch_variable];
+      case 0xb2: case 0xb6: case 0xba: case 0xbe:
+        return [next_patch_byte, next_patch_byte, next_patch_variable, next_patch_word];
+      case 0xb3: case 0xb7: case 0xbb: case 0xbf:
+        return [next_patch_byte, next_patch_byte, next_patch_variable, next_patch_variable];
       default:
         throw "undefined opcode";
     }
@@ -956,6 +964,61 @@ function BSPPatcher (bsp, input) {
     set_variable(variable, get_variable(num));
     return true;
   }
+  
+  function addcarry_opcode (variable, carry, first, second) {
+    var result = (first + second) >>> 0;
+    if (result < first) set_variable(carry, (get_variable(carry) + 1) >>> 0);
+    if (variable != carry) set_variable(variable, result);
+    return true;
+  }
+  
+  function subborrow_opcode (variable, borrow, first, second) {
+    if (first < second) set_variable(borrow, (get_variable(borrow) - 1) >>> 0);
+    if (variable != borrow) set_variable(variable, (first - second) >>> 0);
+    return true;
+  }
+  
+  function long_multiply (first, second) {
+    // ensure 64-bit precision. This is even worse than the 32-bit case
+    var first_low = first & 0xffff, first_high = first >>> 16, second_low = second & 0xffff, second_high = second >>> 16;
+    var low = first_low * second_low, mid = first_low * second_high + first_high * second_low, high = first_high * second_high;
+    if (mid >= 0x100000000) {
+      high += 0x10000;
+      mid -= 0x100000000;
+    }
+    var carry = low >>> 16;
+    low &= 0xffff;
+    mid = (mid + carry) >>> 0;
+    if (mid < carry) high += 0x10000;
+    high = (high + (mid >>> 16)) >>> 0;
+    mid &= 0xffff;
+    low = (low | (mid << 16)) >>> 0;
+    return {high: high, low: low};
+  }
+  
+  function longmul_opcode (low, high, first, second) {
+    var result = long_multiply(first >>> 0, second >>> 0);
+    set_variable(high, result.high);
+    if (low != high) set_variable(low, result.low);
+    return true;
+  }
+  
+  function longmulacum_opcode (low, high, first, second) {
+    if (low == high) {
+      set_variable(low, (first * second + get_variable(low)) >>> 0);
+      return true;
+    }
+    var result = long_multiply(first >>> 0, second >>> 0);
+    result.low += get_variable(low);
+    if (result.low >= 0x100000000) {
+      result.high ++;
+      result.low -= 0x100000000;
+    }
+    result.high += get_variable(high);
+    set_variable(low, result.low >>> 0);
+    set_variable(high, result.high >>> 0);
+    return true;
+  }
 
   function opcode_function (opcode) {
     switch (opcode) {
@@ -1042,6 +1105,10 @@ function BSPPatcher (bsp, input) {
       case 0xad: return getfilehalfword_opcode;
       case 0xae: return getfileword_opcode;
       case 0xaf: return getvariable_opcode;
+      case 0xb0: case 0xb1: case 0xb2: case 0xb3: return addcarry_opcode;
+      case 0xb4: case 0xb5: case 0xb6: case 0xb7: return subborrow_opcode;
+      case 0xb8: case 0xb9: case 0xba: case 0xbb: return longmul_opcode;
+      case 0xbc: case 0xbd: case 0xbe: case 0xbf: return longmulacum_opcode;
       default:   throw "undefined opcode";
     }
   }
