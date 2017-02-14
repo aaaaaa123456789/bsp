@@ -261,6 +261,22 @@ of them must be considered a fatal error.
 |`0xad`     |getfilehalfword       |   2|variable                                |
 |`0xae`     |getfileword           |   2|variable                                |
 |`0xaf`     |getvariable           |   3|variable, variable                      |
+|`0xb0`     |addcarry              |  11|variable, variable, word, word          |
+|`0xb1`     |addcarry              |   8|variable, variable, word, variable      |
+|`0xb2`     |addcarry              |   8|variable, variable, variable, word      |
+|`0xb3`     |addcarry              |   5|variable, variable, variable, variable  |
+|`0xb4`     |subborrow             |  11|variable, variable, word, word          |
+|`0xb5`     |subborrow             |   8|variable, variable, word, variable      |
+|`0xb6`     |subborrow             |   8|variable, variable, variable, word      |
+|`0xb7`     |subborrow             |   5|variable, variable, variable, variable  |
+|`0xb8`     |longmul               |  11|variable, variable, word, word          |
+|`0xb9`     |longmul               |   8|variable, variable, word, variable      |
+|`0xba`     |longmul               |   8|variable, variable, variable, word      |
+|`0xbb`     |longmul               |   5|variable, variable, variable, variable  |
+|`0xbc`     |longmulacum           |  11|variable, variable, word, word          |
+|`0xbd`     |longmulacum           |   8|variable, variable, word, variable      |
+|`0xbe`     |longmulacum           |   8|variable, variable, variable, word      |
+|`0xbf`     |longmulacum           |   5|variable, variable, variable, variable  |
 
 ### Bit shifting opcodes
 
@@ -300,6 +316,7 @@ The different instructions are listed here in alphabetical order, for lookup con
 separate sections.
 
 * [add][calc]
+* [addcarry][longcalc]
 * [and][calc]
 * [bsppatch]
 * [bufchar][msgbuffer]
@@ -344,6 +361,9 @@ separate sections.
 * [jumpz][flow]
 * [length]
 * [lockpos][pos]
+* [longmul][longcalc]
+* [longmulacum][longcalc]
+* [mulacum][longcalc] (note that this is an alias)
 * [menu]
 * [multiply][calc]
 * [nop]
@@ -375,6 +395,7 @@ separate sections.
 * [stackread][stack-adv]
 * [stackshift][stack-adv]
 * [stackwrite][stack-adv]
+* [subborrow][longcalc]
 * [subtract][calc]
 * [truncate]
 * [truncatepos][truncate]
@@ -390,6 +411,7 @@ separate sections.
 [var-basic]: #basic-variable-operations
 [calc]: #arithmetical-and-logical-instructions
 [bit-shifts]: #bit-shifting-operations
+[longcalc]: #long-arithmetical-instructions
 [stack-basic]: #basic-stack-operations
 [flow]: #control-flow
 [conditionals]: #conditionals
@@ -506,6 +528,54 @@ specification for the instructions; the instructions (in the binary file format)
 Note on encoding: the last operand, the bit count, is already encoded in the second byte of the instruction (which
 selects the opcode and the operand types) when it is an immediate, and therefore will be out of order. (When it is a
 variable, it will be encoded explicitly as the last byte of the instruction, as usual.)
+
+### Long arithmetical instructions
+
+```
+addcarry #result, #carry, any, any
+subborrow #result, #borrow, any, any
+longmul #low, #high, any, any
+longmulacum #low, #high, any, any
+```
+
+These instructions perform calculations that are similar to their regular counterparts, but with special care for
+results that do not fit in 32 bits.
+
+The `addcarry` instruction adds the last two operands and stores the result in the variable specified by the first. If
+the addition carries (that is, if the result, as a 32-bit unsigned value, is strictly lower than the operands), the
+variable specified by the second operand is incremented by one. (Note that the "strictly lower than its operands"
+condition can only be fulfilled for both operands or for neither, so testing against any one of the operands is
+sufficient.)
+
+The `subborrow` instruction performs a subtraction in a similar way, storing the result in the variable specified by
+the first operand. If the subtraction borrows (that is, if the minuend (the instruction's third operand) as a 32-bit
+unsigned value is strictly lower than the subtrahend (the instruction's last operand)), the variable specified by the
+second operand is decremented by one.
+
+The `longmul` instruction performs a 64-bit (unsigned) multiplication between its operands, and stores the lower word
+in the variable specified by the first operand and the higher word in the variable specified by the second. For
+instance, `longmul #1, #2, 0x12345678, 0x87654321` would set variable 1 to `0x70b88d78` and variable 2 to `0x09a0cd05`.
+(Note that `0x12345678` times `0x87654321` is `0x09a0cd0570b88d78`.)
+
+The `longmulacum` instruction performs a 64-bit multiplication in the same way, but it adds the result to the 64-bit
+value contained between the variables in the first two operands. For instance, if variable 1 contains `0xfedcba98` and
+variable 2 contains `0x76543210`, then `longmulacum #1, #2, 0x01234567, 0x89abcdef` would set variable 1 to
+`0xc82b00c1` and variable 2 to `76f0d5ae`. (Note that `0x76543210fedcba98` + (`0x01234567` * `0x89abcdef`) is
+`0x76f0d5aec82b00c1`.)
+
+In case that the first two operands point to the same variable, these instructions behave as follows:
+
+* The `addcarry` and `subborrow` instructions will increment/decrement the variable in case of carry/borrow, but not
+  store the actual result of the addition/subtraction anywhere; the result is discarded.
+* The `longmul` instruction will store the high word of the result in the variable. The low word of the result is
+  discarded.
+* The `longmulacum` instruction will store the _low_ word of the result in the variable. The high word of the result is
+  discarded. Note that this intentionally differs from the behavior of the other instructions.
+
+Due to the special behavior of the `longmulacum` instruction when the first two operands are the same variable, the
+compiler has a shorthand for this instruction, called `mulacum`; this instruction takes three operands, and it is
+expanded to `longmulacum` by repeating the first operand (which must be a variable). Note that this is a feature of the
+compiler, not part of the specification itself; the instruction in its binary form exists in four-operand form only.
 
 ### Basic stack operations
 
