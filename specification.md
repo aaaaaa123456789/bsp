@@ -831,7 +831,9 @@ variable. The address indicates where the value is located; halfwords and words 
 
 The `inc` and `dec` variants respectively increment and decrement the address variable by the size of the value (1, 2
 or 4) _after_ reading from that address. For these instructions, the address must be a variable; it cannot be an
-immediate address. (Note that a reference to a label is compiled as an immediate.)
+immediate address. (Note that a reference to a label is compiled as an immediate.) If both arguments to one of these
+instructions refer to the same variable, the instruction behaves as its regular counterpart, setting the variable to
+the value at the address and disregarding the increment.
 
 ### Reading values from the file buffer
 
