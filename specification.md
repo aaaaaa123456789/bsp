@@ -560,7 +560,7 @@ instance, `longmul #1, #2, 0x12345678, 0x87654321` would set variable 1 to `0x70
 The `longmulacum` instruction performs a 64-bit multiplication in the same way, but it adds the result to the 64-bit
 value contained between the variables in the first two operands. For instance, if variable 1 contains `0xfedcba98` and
 variable 2 contains `0x76543210`, then `longmulacum #1, #2, 0x01234567, 0x89abcdef` would set variable 1 to
-`0xc82b00c1` and variable 2 to `76f0d5ae`. (Note that `0x76543210fedcba98` + (`0x01234567` * `0x89abcdef`) is
+`0xc82b00c1` and variable 2 to `0x76f0d5ae`. (Note that `0x76543210fedcba98` + (`0x01234567` * `0x89abcdef`) is
 `0x76f0d5aec82b00c1`.)
 
 In case that the first two operands point to the same variable, these instructions behave as follows:
