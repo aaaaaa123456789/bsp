@@ -1005,7 +1005,7 @@ function BSPPatcher (bsp, input) {
   
   function longmulacum_opcode (low, high, first, second) {
     if (low == high) {
-      set_variable(low, (first * second + get_variable(low)) >>> 0);
+      set_variable(low, (multiply(first, second) + get_variable(low)) >>> 0);
       return true;
     }
     var result = long_multiply(first >>> 0, second >>> 0);
