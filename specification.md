@@ -68,8 +68,8 @@ the instruction pointer upon execution.
 ## Opcodes
 
 The opcode of each instruction is defined by the first byte. This also defines its length, and the kind of operands it
-will take. An instruction can be asigned more than one opcode depending on its arguments: for instance, the `set`
-instruction has two opcodes; one when called with two variables as its operands, and another one when called with a
+will take. An instruction can be asigned more than one opcode depending on its arguments. For instance, the `set`
+instruction has two opcodes: one when called with two variables as its operands, and another one when called with a
 variable and an immediate (a constant value encoded in the instruction itself).
 
 Variables are always encoded as a single byte indicating the variable number. Immediates (that is, constant numerical
@@ -512,10 +512,10 @@ least significant bits of that variable will be used as bit count; the rest are 
 as a result of using a variable bit count is acceptable.)
 
 The `shiftleft` and `shiftright` instructions shift the value in the corresponding direction, filling the shifted bits
-with zeros. The `shiftrightarith` behaves like `shiftright`, but extends the sign bit (the most significant bit)
-instead; if this bit is 1, the shifted bits will be filled with ones. The `rotateleft` instruction shifts the value to
-the left and inserts the bits that are dropped from the value on the right: a left rotation of 4 bits on the value
-`0x12345678` will generate the value `0x23456781`.
+with zeros. The `shiftrightarith` instruction behaves like `shiftright`, but extends the sign bit (the most significant
+bit) instead; if this bit is 1, the shifted bits will be filled with ones. The `rotateleft` instruction shifts the
+value to the left and inserts the bits that are dropped from the value on the right: a left rotation of 4 bits on the
+value `0x12345678` will generate the value `0x23456781`.
 
 Note that no `rotateright` instruction exists; the same effect can be achieved by negating the rotation count and using
 a `rotateleft` instruction.
@@ -709,7 +709,7 @@ written to the indicated variable; the first option is numbered zero.
 
 The address parameter should point to a list of pointers in patch space, each pointer pointing in turn to the text that
 each option will contain (in the same format that the `print` instruction uses); the list is terminated with a
-`0xffffffff` value. For instance, this code would display a menu with four options:
+`0xffffffff` value. For instance, this code fragment would display a menu with four options:
 
 ```
 	menu #result, Options
@@ -735,7 +735,7 @@ If the list of pointers is empty (i.e., if the first pointer is `0xffffffff`), n
 variable is set to `0xffffffff`.
 
 Note that a menu with just one option must still be shown to the user, as it is possible to use such a menu to give the
-user the possibility of aborting the process.
+user the possibility of aborting the process by stopping the BSP engine.
 
 ### Jump tables
 
@@ -930,7 +930,7 @@ truncatepos
 The `truncate` instruction changes the length of the file buffer to the specified value. If the file buffer is made
 shorter this way, the data at the end of it is lost; if it is made longer, the gap at the end is filled with zeros.
 Note that this instruction does not update the current file pointer, even if it would point beyond the end of the file
-buffer after execution
+buffer after execution.
 
 The `truncatepos` instruction changes the length of the file buffer to make it end at the current file pointer; that
 is, it sets the length of the file buffer to the value of the current file pointer, causing the current file pointer to
@@ -981,8 +981,8 @@ checksha1 #variable, address
 ```
 
 This instruction calculates the SHA-1 hash of the current contents of the file buffer (the current file pointer is not
-read or updated by this instruction), and compares it to the hash stored in the patch space at the specified address.
-The hash is stored as a 20-byte value, most significant byte first for convenience. The hash is to be calculated as
+read or updated by this instruction), and compares it to the hash stored in patch space at the specified address. The
+hash is stored as a 20-byte value, most significant byte first for convenience. The hash is to be calculated as
 specified by the formal specification in [RFC 3174][rfc3174].
 
 The comparison returns a bit mask, which sets a bit for each byte that fails the comparison: bit 0 is set if the first
@@ -1033,8 +1033,8 @@ defined as follows:
 2. Read three bytes and interpret them as a 24-bit big-endian unsigned value. If this value is equal to `0x454f46`
    (which happens to be the ASCII string `EOF`), the patch is done (and the variable passed to the `ipspatch`
    instruction must be set to the address that would be read next); otherwise, continue with the next step.
-3. Add this value to the current file pointer to determine where to begin writing. (Note that this is specific to this
-   specification, and not part of the IPS format itself.)
+3. Add this value to the current file pointer to determine where to begin writing. (Note that this step is specific to
+   this specification, and not part of the IPS format itself.)
 4. Read two bytes and interpret them as a 16-bit big-endian unsigned value; this is the amount of data to write.
 5. If the value read in the previous step is not zero, read as many bytes as that value indicates and write those bytes
    (in the same order) to the file buffer at the position calculated in step 3; then go back to step 2.
