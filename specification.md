@@ -748,6 +748,10 @@ may have. The instruction will read the word at `instruction pointer + 4 * #vari
 read. Note that no bounds checking is performed on the value of the variable, so the script must ensure that the
 instruction will jump to a correct location.
 
+If the address calculation performed above results in an address that goes beyond the end of patch space, including the
+case where either the multiplication or the (unsigned) addition result in a value that doesn't fit in 32 bits, a fatal
+error occurs.
+
 For instance, the following code will jump to `.zero`, `.one` or `.two` depending on whether the value of `#var` is 0,
 1 or 2 respectively (if `#var` is 3 or greater, the result is undefined):
 
