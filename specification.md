@@ -1,5 +1,13 @@
 # BSP specification
 
+* [Introduction](#introduction)
+* [Execution model](#execution-model)
+* [Opcodes](#opcodes)
+* [Instruction set](#instruction-set)
+* [Instruction description](#instruction-description)
+
+## Introduction
+
 A binary scripted patch, hereafter a BSP, is a file containing a script indicating how to convert some data, called the
 source, into some other data, called the target. In order to achieve this goal, the patcher must execute the script
 contained in the BSP. This document formally specifies how that execution must be done, and how the BSP file must be
