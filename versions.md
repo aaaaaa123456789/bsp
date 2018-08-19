@@ -265,8 +265,6 @@ Commit: 2f26f24664bd5a6e8b204f9e1e7b9a2d6a522e79
 
 * Adds a list of all instruction names and describes the `nop` instruction
 
-#### Version 0.0.1, rev. 1 (26 November 2016)
-
-Commit: 0e871909f4f47d1bdd5c75fa8d5732adcc010b37
+#### [Version 0.0.1, rev. 1 (26 November 2016)](https://github.com/aaaaaa123456789/bsp/blob/0e871909f4f47d1bdd5c75fa8d5732adcc010b37/specification.md)
 
 * Initial draft version of the specification; contains an introduction and the initial instruction list
