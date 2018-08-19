@@ -1,5 +1,7 @@
 # BSP specification
 
+([version](versions.md): 0.5.2, rev. 37)
+
 * [Introduction](#introduction)
 * [Execution model](#execution-model)
 * [Opcodes](#opcodes)
