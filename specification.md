@@ -1100,6 +1100,12 @@ to support at least Latin letters (A-Z, a-z), digits (0-9), spaces, and the foll
 `'-,.;:#%&!?/()[]`. All of these characters are encoded as single UTF-8 bytes, and belong to the following ranges:
 `0x20` - `0x21`, `0x23`, `0x25` - `0x29`, `0x2c` - `0x3b`, `0x3f`, `0x41` - `0x5b`, `0x5d`, and `0x61` - `0x7a`.
 
+Control characters in strings must be accepted, as they are valid UTF-8 characters; they are also valid arguments to
+the `bufchar` instruction. (In particular, `0` is a valid argument to `bufchar`, and therefore must not be treated as
+a string terminator in that context.) However, since they are not in the ranges listed in the previous paragraph,
+engines are not required to support them; control characters may be ignored (i.e., substituted by nothing) when the
+string (or the message buffer) is displayed to the user, or handled in any other appropriate way.
+
 The engine may enforce a limit on the number of bytes and/or characters that the message buffer can accept; this limit
 may also be dynamically determined during execution. If such a limit is enforced, characters and/or bytes in excess
 must be silently discarded without error; the engine must take care to discard multibyte characters as a whole, and
