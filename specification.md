@@ -672,12 +672,7 @@ This document does not specify how the engine will display the message; however,
 (or an environment that behaves in a similar fashion), it is recommended that the engine prints a newline character
 after the message.
 
-If the message is not valid UTF-8, the engine may choose to display the message anyway (handling the invalid characters
-in any way it can) or to treat it as a fatal error.
-
-An engine incapable of handling the full Unicode character set may choose to use a reduced character set and replace
-the remaining characters with a suitable substitution character; however, an engine must at least support the Latin
-letters (A-Z, a-z), digits (0-9), spaces, and the following punctuation characters: `'-,.;:#%&!?/()[]`.
+Further considerations regarding message strings are given in the [String handling](#string-handling) section.
 
 ### Manipulating the message buffer
 
@@ -694,11 +689,9 @@ The first three instructions concatenate data at the end of the message buffer. 
 The `bufstring` instruction concatenates a string (in the same format as for the `print` instruction) at the end of
 the message buffer. No separator is inserted before or after the string.
 
-The `bufchar` instruction appends a single Unicode character to the message buffer. An engine incapable of handling the
-full Unicode character set may choose to use a reduced character set and replace the remaining characters with suitable
-substitutes; it must however support at least the letters (A-Z, a-z), numbers (0-9), basic punctuation characters
-(`'-,.;:#%&!?/()[]`) and the space character. Passing a value that isn't a valid Unicode codepoint (`0x000000` to 
-`0x00d7ff` and `0x00e000` to `0x10ffff`) is a fatal error.
+The `bufchar` instruction appends a single Unicode character to the message buffer. Passing a value that isn't a valid
+Unicode codepoint (`0x000000` to `0x00d7ff` and `0x00e000` to `0x10ffff`) is a fatal error; values above `0x1fffff`
+are reserved for further versions of the specification.
 
 The `bufnumber` instruction appends the decimal representation of a number to the message buffer. The number is
 treated as a 32-bit unsigned value and converted to decimal, and printed using the regular digit characters (0-9,
@@ -708,6 +701,8 @@ than a single `0` for the number zero itself).
 The `printbuf` instruction prints the contents of the message buffer as a message (as if it had been passed to the
 `print` instruction) and clears the buffer, resetting it to the empty string. The `clearbuf` instruction resets the
 message buffer to the empty string without printing it.
+
+Further considerations regarding the message buffer are given in the [String handling](#string-handling) section.
 
 ### Option menus
 
