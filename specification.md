@@ -740,6 +740,9 @@ Options:
 If the list of pointers is empty (i.e., if the first pointer is `0xffffffff`), no menu is shown to the user, and the
 variable is set to `0xffffffff`.
 
+Further considerations regarding the text used as option labels are given in the [String handling](#string-handling)
+section.
+
 Note that a menu with just one option must still be shown to the user, as it is possible to use such a menu to give the
 user the possibility of aborting the process by stopping the BSP engine.
 
