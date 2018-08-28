@@ -689,9 +689,10 @@ The first three instructions concatenate data at the end of the message buffer. 
 The `bufstring` instruction concatenates a string (in the same format as for the `print` instruction) at the end of
 the message buffer. No separator is inserted before or after the string.
 
-The `bufchar` instruction appends a single Unicode character to the message buffer. Passing a value that isn't a valid
-Unicode codepoint (`0x000000` to `0x00d7ff` and `0x00e000` to `0x10ffff`) is a fatal error; values above `0x1fffff`
-are reserved for further versions of the specification.
+The `bufchar` instruction appends a single Unicode character to the message buffer. The value passed to the `bufchar`
+instruction as an argument must represent a valid non-surrogate Unicode codepoint (i.e., it must be between `0x000000`
+and `0x00d7ff`, or `0x00e000` and `0x10ffff`); passing a value outside of those ranges is a fatal error. Values above
+`0x1fffff` are reserved for further versions of the specification.
 
 The `bufnumber` instruction appends the decimal representation of a number to the message buffer. The number is
 treated as a 32-bit unsigned value and converted to decimal, and printed using the regular digit characters (0-9,
@@ -1093,13 +1094,14 @@ instructions, as well as [those that manipulate the message buffer][msgbuffer]. 
 must behave when handling strings, and which part of the functionality is implementation-dependent.
 
 Valid strings in the BSP itself must be in UTF-8 format, as specified by [RFC 3629][rfc3629], regardless of the
-effective output format of the engine. Any UTF-8 decoding errors must be treated as fatal (including recoverable ones
-such as overlong encodings or surrogate characters (codepoints between `0x00d800` and `0x00dfff`) being encoded).
+effective output format of the engine. Any UTF-8 decoding errors (such as overlong encodings) must be treated as
+fatal, without attempting any recovery; surrogate codepoints (i.e., those between `0x00d800` and `0x00dfff`) must be
+treated as fatal errors as well.
 
-Despite the engine must accept any valid UTF-8 string, it isn't required to be able to effectively display any Unicode
-character; an engine incapable of handling the full Unicode character set may choose to use a reduced one and replace
-characters not in its reduced set with zero or more suitable substitution characters. However, an engine is required
-to support at least Latin letters (A-Z, a-z), digits (0-9), spaces, and the following punctuation characters:
+Although the engine must accept any valid UTF-8 string, it isn't required to be able to effectively display any
+Unicode character; an engine incapable of handling the full Unicode character set may choose to use a reduced one and
+replace characters not in its reduced set with zero or more suitable substitution characters. However, an engine is
+required to support at least Latin letters (A-Z, a-z), digits (0-9), spaces, and the following punctuation characters:
 `'-,.;:#%&!?/()[]`. All of these characters are encoded as single UTF-8 bytes, and belong to the following ranges:
 `0x20` - `0x21`, `0x23`, `0x25` - `0x29`, `0x2c` - `0x3b`, `0x3f`, `0x41` - `0x5b`, `0x5d`, and `0x61` - `0x7a`.
 
