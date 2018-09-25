@@ -1,6 +1,6 @@
 # BSP specification
 
-(forked off [version](versions.md): 0.5.2, rev. 37)
+([version](versions.md): 0.6.0, rev. 38)
 
 * [Introduction](#introduction)
 * [Execution model](#execution-model)
