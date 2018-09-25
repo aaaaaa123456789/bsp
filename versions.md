@@ -36,7 +36,23 @@ specification. However, this does not convey as much information as the full ver
 
 ## Changelog
 
-#### [Version 0.5.2, rev. 37 (19 August 2018)](https://github.com/aaaaaa123456789/bsp/blob/master/specification.md)
+#### [Version 0.6.0, rev. 38 (25 September 2018)](https://github.com/aaaaaa123456789/bsp/blob/master/specification.md)
+
+Adds a section about characters and strings (referenced from all instructions that handle text data), including
+changes such as:
+
+* Forbidding the use of invalid UTF-8 strings, requiring a fatal error in all cases
+* Actually pointing to the UTF-8 spec (i.e., the RFC) instead of leaving it implied
+* Specifying the acceptable behaviors of valid UTF-8 strings: what characters must be supported by the engine, and
+  which ones can be substituted
+* Requiring that any valid UTF-8 string is accepted, including those containing control characters (despite those
+  control characters need not be actually displayed)
+* Elaborating on character/byte limits for strings, detailing how an engine that imposes such limits must behave
+* Adding a few notes that address corner cases regarding invalid UTF-8 strings
+* Indicating that arguments to bufchar above `0x1fffff` are reserved and may actually have some purpose in future
+  versions of the spec (since they are completely outside the range of Unicode)
+
+#### [Version 0.5.2, rev. 37 (19 August 2018)](https://github.com/aaaaaa123456789/bsp/blob/92d13c851899eeb06d26ce346ee4f6ab46123ee7/specification.md)
 
 * Adds a version number to the specification and a link to the (newly-written) changelog
 

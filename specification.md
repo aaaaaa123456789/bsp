@@ -1,12 +1,13 @@
 # BSP specification
 
-([version](versions.md): 0.5.2, rev. 37)
+([version](versions.md): 0.6.0, rev. 38)
 
 * [Introduction](#introduction)
 * [Execution model](#execution-model)
 * [Opcodes](#opcodes)
 * [Instruction set](#instruction-set)
 * [Instruction description](#instruction-description)
+* [String handling](#string-handling)
 
 ## Introduction
 
@@ -671,12 +672,7 @@ This document does not specify how the engine will display the message; however,
 (or an environment that behaves in a similar fashion), it is recommended that the engine prints a newline character
 after the message.
 
-If the message is not valid UTF-8, the engine may choose to display the message anyway (handling the invalid characters
-in any way it can) or to treat it as a fatal error.
-
-An engine incapable of handling the full Unicode character set may choose to use a reduced character set and replace
-the remaining characters with a suitable substitution character; however, an engine must at least support the Latin
-letters (A-Z, a-z), digits (0-9), spaces, and the following punctuation characters: `'-,.;:#%&!?/()[]`.
+Further considerations regarding message strings are given in the [String handling](#string-handling) section.
 
 ### Manipulating the message buffer
 
@@ -693,11 +689,10 @@ The first three instructions concatenate data at the end of the message buffer. 
 The `bufstring` instruction concatenates a string (in the same format as for the `print` instruction) at the end of
 the message buffer. No separator is inserted before or after the string.
 
-The `bufchar` instruction appends a single Unicode character to the message buffer. An engine incapable of handling the
-full Unicode character set may choose to use a reduced character set and replace the remaining characters with suitable
-substitutes; it must however support at least the letters (A-Z, a-z), numbers (0-9), basic punctuation characters
-(`'-,.;:#%&!?/()[]`) and the space character. Passing a value that isn't a valid Unicode codepoint (`0x000000` to 
-`0x00d7ff` and `0x00e000` to `0x10ffff`) is a fatal error.
+The `bufchar` instruction appends a single Unicode character to the message buffer. The value passed to the `bufchar`
+instruction as an argument must represent a valid non-surrogate Unicode codepoint (i.e., it must be between `0x000000`
+and `0x00d7ff`, or `0x00e000` and `0x10ffff`); passing a value outside of those ranges is a fatal error. Values above
+`0x1fffff` are reserved for further versions of the specification.
 
 The `bufnumber` instruction appends the decimal representation of a number to the message buffer. The number is
 treated as a 32-bit unsigned value and converted to decimal, and printed using the regular digit characters (0-9,
@@ -707,6 +702,8 @@ than a single `0` for the number zero itself).
 The `printbuf` instruction prints the contents of the message buffer as a message (as if it had been passed to the
 `print` instruction) and clears the buffer, resetting it to the empty string. The `clearbuf` instruction resets the
 message buffer to the empty string without printing it.
+
+Further considerations regarding the message buffer are given in the [String handling](#string-handling) section.
 
 ### Option menus
 
@@ -743,6 +740,9 @@ Options:
 
 If the list of pointers is empty (i.e., if the first pointer is `0xffffffff`), no menu is shown to the user, and the
 variable is set to `0xffffffff`.
+
+Further considerations regarding the text used as option labels are given in the [String handling](#string-handling)
+section.
 
 Note that a menu with just one option must still be shown to the user, as it is possible to use such a menu to give the
 user the possibility of aborting the process by stopping the BSP engine.
@@ -1086,3 +1086,67 @@ child to the parent.
 If the child's execution triggers a fatal error, this fatal error must be propagated to the parent; in other words,
 a fatal error at any depth must halt the whole engine. Execution of the parent must **not** be resumed after a fatal
 error occurs in the child.
+
+## String handling
+
+Several instructions in this specification deal with strings — namely, the [`print`][print] and [`menu`][menu]
+instructions, as well as [those that manipulate the message buffer][msgbuffer]. This section specifies how the engine
+must behave when handling strings, and which part of the functionality is implementation-dependent.
+
+Valid strings in the BSP itself must be in UTF-8 format, as specified by [RFC 3629][rfc3629], regardless of the
+effective output format of the engine. Any UTF-8 decoding errors (such as overlong encodings) must be treated as
+fatal, without attempting any recovery; surrogate codepoints (i.e., those between `0x00d800` and `0x00dfff`) must be
+treated as fatal errors as well.
+
+Although the engine must accept any valid UTF-8 string, it isn't required to be able to effectively display any
+Unicode character; an engine incapable of handling the full Unicode character set may choose to use a reduced one and
+replace characters not in its reduced set with zero or more suitable substitution characters. However, an engine is
+required to support at least Latin letters (A-Z, a-z), digits (0-9), spaces, and the following punctuation characters:
+`'-,.;:#%&!?/()[]`. All of these characters are encoded as single UTF-8 bytes, and belong to the following ranges:
+`0x20` - `0x21`, `0x23`, `0x25` - `0x29`, `0x2c` - `0x3b`, `0x3f`, `0x41` - `0x5b`, `0x5d`, and `0x61` - `0x7a`.
+
+Control characters in strings must be accepted, as they are valid UTF-8 characters; they are also valid arguments to
+the `bufchar` instruction. (In particular, `0` is a valid argument to `bufchar`, and therefore must not be treated as
+a string terminator in that context.) However, since they are not in the ranges listed in the previous paragraph,
+engines are not required to support them; control characters may be ignored (i.e., substituted by nothing) when the
+string (or the message buffer) is displayed to the user, or handled in any other appropriate way.
+
+The engine may enforce a limit on the number of bytes and/or characters that the message buffer can accept; this limit
+may also be dynamically determined during execution. If such a limit is enforced, characters and/or bytes in excess
+must be silently discarded without error; the engine must take care to discard multibyte characters as a whole, and
+not only some of their bytes. (For instance, if the last character to be added to the buffer is codepoint `0x0000a0`,
+encoded as `0xc2` `0xa0`, the engine may keep both bytes or discard them both, but it must not discard just the last
+byte.) If any of the instructions that append to the message buffer (i.e., `bufstring`, `bufchar` or `bufnumber`)
+cause some data to be silently discarded due to the buffer being full, any further such instructions must be silently
+ignored (i.e., wholly discarded) until the buffer is cleared via the `printbuf` or `clearbuf` instructions.
+
+The engine may enforce a similar limit on the number of bytes and/or characters to be printed by a single `print`
+instruction, as well as a maximum length for option labels for the `menu` instruction. Any text exceeding these limits
+must be silently truncated as given in the previous paragraph.
+
+Invalid UTF-8 strings given as arguments to the `bufstring` instruction cause a fatal error; this error may occur at
+the time of executing that instruction, or when executing any further instruction that manipulates the message buffer,
+up to the point where the message buffer is printed via the `printbuf` instruction. If the message buffer is never
+printed, the error may occur up to the point where the message buffer is cleared (either via the `clearbuf`
+instruction or due to terminating execution) or not at all; this is implementation-defined.
+
+Multibyte UTF-8 characters appended to the message buffer via `bufstring` instructions must be fully contained within
+a single string; if two or more consecutive instructions append parts of a multibyte UTF-8 character that build up to
+a valid character, the engine may accept those parts as a whole character or trigger a fatal error. For instance, the
+following snippet:
+
+```
+	bufstring .first
+	bufstring .second
+	; ...
+
+	; UTF encoding of U+00A0: 0xc2, 0xa0
+.first
+	db 0xc2, 0
+.second
+	db 0xa0, 0
+```
+
+may either append a `0x0000a0` codepoint to the message or cause a fatal error.
+
+[rfc3629]: https://tools.ietf.org/html/rfc3629
