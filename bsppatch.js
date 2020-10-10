@@ -251,7 +251,7 @@ function BSPPatcher (bsp, input) {
   function next_patch_variable () {
     return get_variable(next_patch_byte());
   }
-  
+
   function update_current_file_pointer (value) {
     if (current_file_pointer_locked) return;
     current_file_pointer = value >>> 0;
@@ -305,7 +305,7 @@ function BSPPatcher (bsp, input) {
     file_buffer.resize(value);
     dirty = true;
   }
-  
+
   function utf8_decode (address) {
     var codepoints = [];
     var current_codepoint, remaining, next, peek;
@@ -351,19 +351,19 @@ function BSPPatcher (bsp, input) {
     }
     return result;
   }
-  
+
   function update_hashes () {
     if (!dirty) return;
     sha1 = file_buffer.calculate_sha1();
     dirty = false;
   }
-  
+
   function write_data (position, address, len) {
     if (len === 0) return;
     while (len --) file_buffer.set_byte(position ++, get_byte(address ++));
     dirty = true;
   }
-  
+
   function xor_data (position, address, len) {
     if (len === 0) return;
     var value;
@@ -373,13 +373,13 @@ function BSPPatcher (bsp, input) {
     }
     dirty = true;
   }
-  
+
   function calculate_real_stack_position (position) {
     if (position >= 0x80000000) position = frames[0].stack.length + (position - 0x100000000);
     if ((position < 0) || (position >= frames[0].stack.length)) throw "invalid stack position";
     return position;
   }
-  
+
   function array_repeat (value, count) {
     var pos, array = [];
     for (pos = 31; pos >= 0; pos --) {
@@ -388,7 +388,7 @@ function BSPPatcher (bsp, input) {
     }
     return array;
   }
-  
+
   function resize_stack (size) {
     if (size < frames[0].stack.length) {
       frames[0].stack.splice(0, frames[0].stack.length - size);
@@ -592,7 +592,7 @@ function BSPPatcher (bsp, input) {
     set_variable(variable, multiply(first, second));
     return true;
   }
-  
+
   function conditional_jump_opcode (condition) {
     return function (first, second, address) {
       var check = eval("first " + condition + " second");
@@ -600,47 +600,47 @@ function BSPPatcher (bsp, input) {
       return jump_opcode(address);
     };
   }
-  
+
   function instruction_if_zero (fn, condition) {
     return function (comparand, address = undefined) {
       if ((comparand === 0) !== condition) return true;
       return fn(address);
     };
   }
-  
+
   function seek_opcode (value) {
     update_current_file_pointer(value);
     return true;
   }
-  
+
   function seekfwd_opcode (value) {
     if (current_file_pointer_locked) return true;
     if ((value + current_file_pointer) > 0xffffffff) throw "current file pointer overflow";
     current_file_pointer += value;
     return true;
   }
-  
+
   function seekback_opcode (value) {
     if (current_file_pointer_locked) return true;
     if (value > current_file_pointer) throw "current file pointer overflow";
     current_file_pointer -= value;
     return true;
   }
-  
+
   function seekend_opcode (value) {
     if (current_file_pointer_locked) return true;
     if (value > file_buffer.size()) throw "current file pointer overflow";
     current_file_pointer = file_buffer.size() - value;
     return true;
   }
-  
+
   function print_opcode (address) {
     if (self.print === undefined) throw "could not display message to user";
     var msg = utf8_decode(address);
     queue_function(function () {self.print(msg);});
     return false;
   }
-  
+
   function menu_opcode (variable, address) {
     var options = [];
     var option;
@@ -661,7 +661,7 @@ function BSPPatcher (bsp, input) {
     queue_function(function () {self.menu(options);});
     return false;
   }
-  
+
   function xordata_opcode (start, len) {
     if ((current_file_pointer + len) > 0xffffffff) throw "file position overflow";
     if (current_file_pointer >= file_buffer.size()) return writedata_opcode(start, len);
@@ -675,7 +675,7 @@ function BSPPatcher (bsp, input) {
     if (!current_file_pointer_locked) current_file_pointer += len;
     return true;
   }
-  
+
   function fillbyte_opcode (count, value) {
     if (count === 0) return true;
     var address = current_file_pointer;
@@ -686,7 +686,7 @@ function BSPPatcher (bsp, input) {
     dirty = true;
     return true;
   }
-  
+
   function fillhalfword_opcode (count, value) {
     if (count === 0) return true;
     var address = current_file_pointer;
@@ -700,7 +700,7 @@ function BSPPatcher (bsp, input) {
     dirty = true;
     return true;
   }
-  
+
   function fillword_opcode (count, value) {
     if (count === 0) return true;
     var address = current_file_pointer;
@@ -713,41 +713,41 @@ function BSPPatcher (bsp, input) {
     dirty = true;
     return true;
   }
-  
+
   function writedata_opcode (start, len) {
     if ((current_file_pointer + len) > 0xffffffff) throw "file position overflow";
     write_data(current_file_pointer, start, len);
     if (!current_file_pointer_locked) current_file_pointer += len;
     return true;
   }
-  
+
   function lockpos_opcode () {
     current_file_pointer_locked = true;
     return true;
   }
-  
+
   function unlockpos_opcode () {
     current_file_pointer_locked = false;
     return true;
   }
-  
+
   function truncatepos_opcode () {
     truncate(current_file_pointer);
     return true;
   }
-  
+
   function jumptable_opcode (value) {
     var address = value * 4 + frames[0].instruction_pointer;
     if ((address + 4) > frames[0].patch_space.byteLength) throw "attempted to read past the end of the patch space";
     frames[0].instruction_pointer = get_word(address);
     return true;
   }
-  
+
   function set_opcode (variable, value) {
     set_variable(variable, value);
     return true;
   }
-  
+
   function ipspatch_opcode (variable, address) {
     var current_address = address;
 
@@ -763,7 +763,7 @@ function BSPPatcher (bsp, input) {
       }
       return result;
     }
-    
+
     var header = [0x50, 0x41, 0x54, 0x43, 0x48];
     while (header.length > 0) if (get_next_byte() !== header.shift()) throw "invalid IPS header";
     var position, count, value;
@@ -784,34 +784,34 @@ function BSPPatcher (bsp, input) {
     dirty = true;
     return true;
   }
-  
+
   function stackwrite_opcode (position, value) {
     frames[0].stack[calculate_real_stack_position(position)] = value;
     return true;
   }
-  
+
   function stackread_opcode (variable, position) {
     set_variable(variable, frames[0].stack[calculate_real_stack_position(position)]);
     return true;
   }
-  
+
   function stackshift_opcode (amount) {
     if (amount >= 0x80000000) amount -= 0x100000000;
     if ((amount + frames[0].stack.length) < 0) throw "stack underflow";
     resize_stack(amount + frames[0].stack.length);
     return true;
   }
-  
+
   function pushpos_opcode () {
     push_to_stack(current_file_pointer);
     return true;
   }
-  
+
   function poppos_opcode () {
     update_current_file_pointer(pop_from_stack());
     return true;
   }
-  
+
   function bsppatch_opcode (variable, start, len) {
     if ((start + len) > frames[0].patch_space.byteLength) throw "attempted to read past the end of the patch space";
     if (len === 0) throw "invalid zero length";
@@ -820,64 +820,64 @@ function BSPPatcher (bsp, input) {
     frames.unshift(new_frame);
     return true;
   }
-  
+
   function getbyteinc_opcode (value_var, address_var) {
     var address = get_variable(address_var);
     set_variable(address_var, (address + 1) >>> 0);
     set_variable(value_var, get_byte(address));
     return true;
   }
-  
+
   function gethalfwordinc_opcode (value_var, address_var) {
     var address = get_variable(address_var);
     set_variable(address_var, (address + 2) >>> 0);
     set_variable(value_var, get_halfword(address));
     return true;
   }
-  
+
   function getwordinc_opcode (value_var, address_var) {
     var address = get_variable(address_var);
     set_variable(address_var, (address + 4) >>> 0);
     set_variable(value_var, get_word(address));
     return true;
   }
-  
+
   function increment_opcode (variable) {
     set_variable(variable, (get_variable(variable) + 1) >>> 0);
     return true;
   }
-  
+
   function getbytedec_opcode (value_var, address_var) {
     var address = get_variable(address_var);
     set_variable(address_var, (address - 1) >>> 0);
     set_variable(value_var, get_byte(address));
     return true;
   }
-  
+
   function gethalfworddec_opcode (value_var, address_var) {
     var address = get_variable(address_var);
     set_variable(address_var, (address - 2) >>> 0);
     set_variable(value_var, get_halfword(address));
     return true;
   }
-  
+
   function getworddec_opcode (value_var, address_var) {
     var address = get_variable(address_var);
     set_variable(address_var, (address - 4) >>> 0);
     set_variable(value_var, get_word(address));
     return true;
   }
-  
+
   function decrement_opcode (variable) {
     set_variable(variable, (get_variable(variable) - 1) >>> 0);
     return true;
   }
-  
+
   function bufstring_opcode (address) {
     frames[0].message_buffer += utf8_decode(address);
     return true;
   }
-  
+
   function bufchar_opcode (character) {
     if ((character > 0x10ffff) || ((character & 0xfffff800) === 0xd800)) throw "invalid Unicode character";
     if (character > 0xffff)
@@ -886,36 +886,36 @@ function BSPPatcher (bsp, input) {
       frames[0].message_buffer += String.fromCharCode(character);
     return true;
   }
-  
+
   function bufnumber_opcode (value) {
     frames[0].message_buffer += value.toString();
     return true;
   }
-  
+
   function printbuf_opcode () {
     var msg = frames[0].message_buffer;
     frames[0].message_buffer = "";
     queue_function(function () {self.print(msg);});
     return false;
   }
-  
+
   function clearbuf_opcode () {
     frames[0].message_buffer = "";
     return true;
   }
-  
+
   function setstacksize_opcode (size) {
     resize_stack(size);
     return true;
   }
-  
+
   function getstacksize_opcode (variable) {
     var size = frames[0].stack.length;
     if (size > 0xffffffff) size = 0xffffffff;
     set_variable(variable, size);
     return true;
   }
-  
+
   function bit_shifting_opcode (bitflags, variable) {
     var shift_count = bitflags & 31;
     var shift_type = (bitflags >> 5) & 3;
@@ -944,40 +944,40 @@ function BSPPatcher (bsp, input) {
     set_variable(variable, value);
     return true;
   }
-  
+
   function getfilebyte_opcode (variable) {
     set_variable(variable, read_byte(false));
     return true;
   }
-  
+
   function getfilehalfword_opcode (variable) {
     set_variable(variable, read_halfword(false));
     return true;
   }
-  
+
   function getfileword_opcode (variable) {
     set_variable(variable, read_word(false));
     return true;
   }
-  
+
   function getvariable_opcode (variable, num) {
     set_variable(variable, get_variable(num));
     return true;
   }
-  
+
   function addcarry_opcode (variable, carry, first, second) {
     var result = (first + second) >>> 0;
     if (result < first) set_variable(carry, (get_variable(carry) + 1) >>> 0);
     if (variable != carry) set_variable(variable, result);
     return true;
   }
-  
+
   function subborrow_opcode (variable, borrow, first, second) {
     if (first < second) set_variable(borrow, (get_variable(borrow) - 1) >>> 0);
     if (variable != borrow) set_variable(variable, (first - second) >>> 0);
     return true;
   }
-  
+
   function long_multiply (first, second) {
     // ensure 64-bit precision. This is even worse than the 32-bit case
     var first_low = first & 0xffff, first_high = first >>> 16, second_low = second & 0xffff, second_high = second >>> 16;
@@ -995,14 +995,14 @@ function BSPPatcher (bsp, input) {
     low = (low | (mid << 16)) >>> 0;
     return {high: high, low: low};
   }
-  
+
   function longmul_opcode (low, high, first, second) {
     var result = long_multiply(first >>> 0, second >>> 0);
     set_variable(high, result.high);
     if (low != high) set_variable(low, result.low);
     return true;
   }
-  
+
   function longmulacum_opcode (low, high, first, second) {
     if (low == high) {
       set_variable(low, (multiply(first, second) + get_variable(low)) >>> 0);
